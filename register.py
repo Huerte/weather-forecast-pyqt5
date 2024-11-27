@@ -11,7 +11,6 @@ class RegisterWindow:
 
         register_button = QPushButton("Register")
         register_button.clicked.connect(lambda: self.stack_widget.setCurrentIndex(0))
-        register_button.clicked.connect(lambda: print("Register button clicked"))
         layout.addWidget(register_button)
 
         window.setLayout(layout)
