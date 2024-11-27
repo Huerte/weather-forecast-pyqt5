@@ -6,7 +6,7 @@ import sys
 class MainWindow(qtw.QMainWindow):
   def __init__(self):
     super().__init__()
-    self.setWindowTitle("Binoang Window")
+    self.setWindowTitle("Binoang na Window")
     self.setGeometry(100, 100, 500, 500)
     self.show()
 
