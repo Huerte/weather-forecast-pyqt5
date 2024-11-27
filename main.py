@@ -1,4 +1,5 @@
 #  KAYAOT SA IM NGAYAN CHARD!!!
+# MAS YAUT KAW RALD !!!
 import PyQt5.QtWidgets as qtw
 import sys
 
