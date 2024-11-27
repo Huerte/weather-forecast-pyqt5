@@ -1,27 +1,45 @@
 #  KAYAOT SA IM NGAYAN CHARD!!!
 # MAS YAUT KAW RALD !!!
+from distutils.command.register import register
+
 import PyQt5.QtWidgets as qtw
 import sys
 
+from PyQt5.QtWidgets import QWidget, QLayout
+from login import LoginWindow
+from register import RegisterWindow
 
-class MainWindow(qtw.QMainWindow):
+
+class MainWindow:
   def __init__(self):
-    super().__init__()
-    self.setWindowTitle("Binoang na Window")
-    self.setGeometry(100, 100, 500, 500)
-    self.show()
-    self.centerWindow()
+    self.main_window = qtw.QMainWindow()
+    self.main_window.setWindowTitle("Binoang na Window")
+    self.main_window.setGeometry(100, 100, 500, 500)
 
-  def centerWindow(self):
+    self.stack_widget = qtw.QStackedWidget()
+
+    self.login_page = LoginWindow(self.stack_widget).display()
+    self.register_page = RegisterWindow(self.stack_widget).display()
+
+    self.stack_widget.addWidget(self.login_page)
+    self.stack_widget.addWidget(self.register_page)
+
+    self.main_window.setCentralWidget(self.stack_widget)
+
+    self.center_window()
+    self.main_window.show()
+
+
+  def center_window(self):
     # Get the geometry of the main window
-    window_geometry = self.frameGeometry()
+    window_geometry = self.main_window.frameGeometry()
 
     # Get the center point of the screen
     screen_center = qtw.QDesktopWidget().availableGeometry().center()
 
     # Move the window's top-left point to the correct position
     window_geometry.moveCenter(screen_center)
-    self.move(window_geometry.topLeft())
+    self.main_window.move(window_geometry.topLeft())
 
   def func(self):
     pass
@@ -29,7 +47,6 @@ class MainWindow(qtw.QMainWindow):
 def main():
   app = qtw.QApplication(sys.argv)
   window = MainWindow()
-  window.show()
   sys.exit(app.exec_())
 
 
