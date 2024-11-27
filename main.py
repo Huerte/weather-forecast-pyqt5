@@ -20,7 +20,6 @@ class MainWindow:
 
     self.login_page = LoginWindow(self.stack_widget).display()
     self.register_page = RegisterWindow(self.stack_widget).display()
-
     self.stack_widget.addWidget(self.login_page)
     self.stack_widget.addWidget(self.register_page)
 
