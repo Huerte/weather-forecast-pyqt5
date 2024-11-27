@@ -1,5 +1,5 @@
-#  KAYAOT SA IM NGAYAN CHARD
-import pyqt5.QtWidgets as qtw
+#  KAYAOT SA IM NGAYAN CHARD!!!
+import PyQt5.QtWidgets as qtw
 import sys
 
 
@@ -13,7 +13,7 @@ class MainWindow(qtw.QMainWindow):
 
 def main():
   app = qtw.QApplication(sys.argv)
-  window = MainWindow(app)
+  window = MainWindow()
   window.show()
   sys.exit(app.exec_())
 
