@@ -9,7 +9,18 @@ class MainWindow(qtw.QMainWindow):
     self.setWindowTitle("Binoang na Window")
     self.setGeometry(100, 100, 500, 500)
     self.show()
+    self.centerWindow()
 
+  def centerWindow(self):
+    # Get the geometry of the main window
+    window_geometry = self.frameGeometry()
+
+    # Get the center point of the screen
+    screen_center = qtw.QDesktopWidget().availableGeometry().center()
+
+    # Move the window's top-left point to the correct position
+    window_geometry.moveCenter(screen_center)
+    self.move(window_geometry.topLeft())
 
 def main():
   app = qtw.QApplication(sys.argv)
