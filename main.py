@@ -23,6 +23,9 @@ class MainWindow(qtw.QMainWindow):
     window_geometry.moveCenter(screen_center)
     self.move(window_geometry.topLeft())
 
+  def func(self):
+    pass
+
 def main():
   app = qtw.QApplication(sys.argv)
   window = MainWindow()
