@@ -12,7 +12,10 @@ class MainWindow:
   def __init__(self):
     self.main_window = qtw.QMainWindow()
     self.main_window.setWindowTitle("Binoang na Window")
-    self.main_window.setGeometry(300, 300, 300, 300)
+    self.main_window.setStyleSheet(f"background-color: #131621;")
+    size = 800
+    self.main_window.setGeometry(size, size, 400, 400)
+
 
     self.stack_widget = qtw.QStackedWidget()
 
@@ -36,6 +39,7 @@ class MainWindow:
     layout = qtw.QVBoxLayout()
 
     label = qtw.QLabel("Home Page")
+    label.setStyleSheet("color: white;")
     layout.addWidget(label, alignment=Qt.AlignCenter)
     home_page.setLayout(layout)
 
