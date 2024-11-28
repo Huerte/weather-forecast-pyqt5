@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt
 import sys
 from login import LoginWindow
 from register import RegisterWindow
+from home import HomePage
 
 
 class MainWindow:
@@ -21,29 +22,18 @@ class MainWindow:
 
     self.login_page = LoginWindow(self.stack_widget).display()
     self.register_page = RegisterWindow(self.stack_widget).display()
+    self.home_page = HomePage(self.stack_widget).display()
 
     # Amo ini an pagkasunod nan mga window, index zero an una mo
     # respawn na page pag run ng program
     self.stack_widget.addWidget(self.login_page)  #index 0
     self.stack_widget.addWidget(self.register_page)  #index 1
-    self.stack_widget.addWidget(self.display_home_page())  #index 2
+    self.stack_widget.addWidget(self.home_page)  #index 2
 
     self.main_window.setCentralWidget(self.stack_widget)
 
     self.center_window()
     self.main_window.show()
-
-
-  def display_home_page(self):
-    home_page = qtw.QWidget()
-    layout = qtw.QVBoxLayout()
-
-    label = qtw.QLabel("Home Page")
-    label.setStyleSheet("color: white;")
-    layout.addWidget(label, alignment=Qt.AlignCenter)
-    home_page.setLayout(layout)
-
-    return home_page
 
   def center_window(self):
     # Get the geometry of the main window

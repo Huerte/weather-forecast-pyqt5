@@ -99,6 +99,7 @@ class LoginWindow:
             self.show_error_message(window, "Hayap kaw Loy?", "Empty input field detected!")
 
         elif self.name_input.text() == "ako" and self.password_input.text() == "password":
+            self.clear_input_fields()
             self.stack_widget.setCurrentIndex(2)
         else:
             self.show_error_message(window, "Error Loy", "User Does Not Exist!")

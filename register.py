@@ -125,6 +125,7 @@ class RegisterWindow:
         elif self.password_input.text() != self.password2_input.text():
             self.show_error_message(window, "Tarunga lagi ayay", "Password does not match!")
         else:
+            self.clear_input_fields()
             self.stack_widget.setCurrentIndex(2)
 
     def clear_input_fields(self):
