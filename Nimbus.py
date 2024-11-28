@@ -3,7 +3,7 @@ import requests
 
 Base_Url = "https://api.openweathermap.org/data/2.5/weather?"
 API_Key = "369f96624e904f3c1ffeaa66a10828ee"
-CITY = "Carrascal"
+CITY = "Cantilan"
 
 def kelvin_to_celsius_fahrenheit(kelvin):
     celsius = kelvin - 273.15

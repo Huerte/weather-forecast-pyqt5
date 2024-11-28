@@ -24,7 +24,17 @@ class RegisterWindow:
 
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("Enter your name")
-        self.name_input.setStyleSheet("font-size: 15px; color: white")
+        #self.name_input.setStyleSheet("font-size: 15px; color: white")
+        self.name_input.setStyleSheet("""
+            QLineEdit {
+                border-color: none;
+                border: 0.5px solid white;
+                color: white;
+                border-radius: 20px;
+                padding: 5px;
+                font-size: 15px;
+            }
+        """)
         self.name_input.setFixedHeight(50)  # Standardize input height
         self.name_input.setFixedWidth(300)  # Standardize input width
         layout.addWidget(self.name_input)
@@ -33,7 +43,16 @@ class RegisterWindow:
 
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Enter your password")
-        self.password_input.setStyleSheet("font-size: 15px; color: white")
+        self.password_input.setStyleSheet("""
+            QLineEdit {
+                border-color: none;
+                border: 0.5px solid white;
+                color: white;
+                border-radius: 20px; 
+                padding: 5px;       
+                font-size: 15px;        
+            }
+        """)
         self.password_input.setFixedHeight(50)  # Standardize input height
         self.password_input.setFixedWidth(300)  # Standardize input width
         layout.addWidget(self.password_input)
@@ -42,7 +61,16 @@ class RegisterWindow:
 
         self.password2_input = QLineEdit()
         self.password2_input.setPlaceholderText("Verify your password")
-        self.password2_input.setStyleSheet("font-size: 15px; color: white")
+        self.password2_input.setStyleSheet("""
+            QLineEdit {
+                border-color: none;  /* Border color */
+                border: 0.5px solid white;
+                color: white;
+                border-radius: 20px;   
+                padding: 5px;         
+                font-size: 15px;
+            }
+        """)
         self.password2_input.setFixedHeight(50)  # Standardize input height
         self.password2_input.setFixedWidth(300)  # Standardize input width
         layout.addWidget(self.password2_input)
@@ -54,9 +82,9 @@ class RegisterWindow:
         register_button.setFixedWidth(150)  # Standardize button width
         register_button.setStyleSheet("""
                     font-size: 15px;
-                    border-radius: 20px;  /* Curve the border */
-                    background-color: #007BFF;  /* Add a button color */
-                    color: white;  /* Set text color */
+                    border-radius: 20px;
+                    background-color: #007BFF;
+                    color: white;
                 """)
         register_button.clicked.connect(lambda: self.proceed_to_home_page(window))
         layout.addWidget(register_button, alignment=Qt.AlignCenter)
@@ -76,7 +104,7 @@ class RegisterWindow:
         # Create and configure the sign-up button
         login_button = QPushButton("Sign up")
         login_button.setFixedHeight(40)  # Standardize button height
-        login_button.setStyleSheet("border: none; color: blue; font-size: 12px")
+        login_button.setStyleSheet("border: none; color: #4757ff; font-size: 12px")
         login_button.clicked.connect(lambda: self.stack_widget.setCurrentIndex(0))
         layout2.addWidget(login_button, 0, 1)
 

@@ -29,7 +29,16 @@ class LoginWindow:
         # Create and configure the username input
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("Enter your username")
-        self.name_input.setStyleSheet("font-size: 15px; color: white")
+        self.name_input.setStyleSheet("""
+            QLineEdit {
+                border-color: none;  /* Border color */
+                border: 0.5px solid white;
+                color: white;
+                border-radius: 20px;      
+                padding: 5px;            
+                font-size: 15px;   
+            }
+        """)
         self.name_input.setFixedHeight(50)  # Standardize input height
         self.name_input.setFixedWidth(300)  # Standardize input width
         layout.addWidget(self.name_input, alignment=Qt.AlignCenter)
@@ -39,7 +48,16 @@ class LoginWindow:
         # Create and configure the password input
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Enter your password")
-        self.password_input.setStyleSheet("font-size: 15px; color: white")
+        self.password_input.setStyleSheet("""
+            QLineEdit {
+                border-color: none;
+                border: 0.5px solid white;
+                color: white;
+                border-radius: 20px;
+                padding: 5px;
+                font-size: 15px; 
+            }
+        """)
         self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setFixedHeight(50)  # Standardize input height
         self.password_input.setFixedWidth(300)  # Standardize input width
