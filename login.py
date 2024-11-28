@@ -9,6 +9,8 @@ class LoginWindow:
         self.password_input = ""
 
     def display(self):
+        window2 = QWidget()
+
         window = QWidget()
         layout = QVBoxLayout()
 
@@ -28,6 +30,9 @@ class LoginWindow:
         layout.addWidget(login_button)
 
         window.setLayout(layout)
+
+        layout2 = QVBoxLayout()
+        layout2.addWidget(window2, alignment=Qt.AlignBottom | Qt.AlignHCenter)
 
         return window
 
