@@ -2,6 +2,7 @@
 # MAS YAUT KAW RALD !!!
 
 import PyQt5.QtWidgets as qtw
+from PyQt5.QtCore import Qt
 import sys
 from login import LoginWindow
 from register import RegisterWindow
@@ -11,15 +12,18 @@ class MainWindow:
   def __init__(self):
     self.main_window = qtw.QMainWindow()
     self.main_window.setWindowTitle("Binoang na Window")
+    self.main_window.setGeometry(300, 300, 300, 300)
 
     self.stack_widget = qtw.QStackedWidget()
 
     self.login_page = LoginWindow(self.stack_widget).display()
     self.register_page = RegisterWindow(self.stack_widget).display()
 
-    self.stack_widget.addWidget(self.login_page)
-    self.stack_widget.addWidget(self.register_page)
-    self.stack_widget.addWidget(self.display_home_page())
+    # Amo ini an pagkasunod nan mga window, index zero an una mo
+    # respawn na page pag run ng program
+    self.stack_widget.addWidget(self.login_page)  #index 0
+    self.stack_widget.addWidget(self.register_page)  #index 1
+    self.stack_widget.addWidget(self.display_home_page())  #index 2
 
     self.main_window.setCentralWidget(self.stack_widget)
 
@@ -32,7 +36,7 @@ class MainWindow:
     layout = qtw.QVBoxLayout()
 
     label = qtw.QLabel("Home Page")
-    layout.addWidget(label)
+    layout.addWidget(label, alignment=Qt.AlignCenter)
     home_page.setLayout(layout)
 
     return home_page
