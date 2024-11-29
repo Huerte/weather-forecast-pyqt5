@@ -123,7 +123,7 @@ class RegisterWindow:
         if self.name_input.text().strip() == "" or self.password_input.text().strip() == "":
             self.show_error_message(window, "Hayap kaw Loy?", "Empty input field detected!")
         elif self.password_input.text() != self.password2_input.text():
-            self.show_error_message(window, "Tarunga lagi ayay laman", "Password does not match!")
+            self.show_error_message(window, "Tarunga lagi ayay laman!", "Password does not match!")
         else:
             self.clear_input_fields()
             self.stack_widget.setCurrentIndex(0)
