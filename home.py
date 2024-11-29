@@ -83,8 +83,10 @@ class HomePage:
 
         # Header Page (Search Bar Section)
         header_page = QWidget()
+        header_page.setFixedWidth(300)
         header_layout = QHBoxLayout()
-        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins around the layout
+        header_layout.setSpacing(5)  # Set the space between the search input and button to 5px
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Enter the city")
@@ -98,7 +100,7 @@ class HomePage:
             }
         ''')
         self.search_input.setFixedHeight(40)
-        self.search_input.setFixedWidth(300)
+        # Removed fixed width, allowing it to take available space
         header_layout.addWidget(self.search_input)
 
         search_btn = QPushButton()
@@ -114,14 +116,15 @@ class HomePage:
             }
         ''')
         search_btn.setIcon(QIcon("assets/icons/search_icon.png"))
-        search_btn.setFixedSize(60, 40)
+        search_btn.setFixedSize(60, 40)  # Fixed size for button
         search_btn.clicked.connect(self.get_weather)
         header_layout.addWidget(search_btn)
 
         header_page.setFixedHeight(60)
         header_page.setLayout(header_layout)
-        self.main_layout.addWidget(header_page)
+        self.main_layout.addWidget(header_page, alignment=Qt.AlignCenter)
 
+        # City Label: Only one instance is needed
         self.city_label = QLabel()
         self.city_label.setStyleSheet("color: white")
         self.main_layout.addWidget(self.city_label)
@@ -135,7 +138,6 @@ class HomePage:
         return home_page
 
     def get_weather(self):
-        print("HEllo richard")
         city = self.search_input.text().title()
         if not city:
             self.result_label.setText("Please enter a city.")
@@ -147,7 +149,7 @@ class HomePage:
         self.weather_thread.start()
 
     def display_weather(self, data):
-        self.result_label.deleteLater()
+        self.result_label.setText("")
 
         temp_kelvin = data['main']['temp']
         temp_celsius = temp_kelvin - 273.15

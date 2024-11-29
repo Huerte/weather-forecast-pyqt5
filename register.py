@@ -92,9 +92,8 @@ class RegisterWindow:
         layout.addSpacing(5)
 
         footer = QWidget()
+        footer.setFixedWidth(210)
         layout2 = QGridLayout()
-        layout2.setContentsMargins(0, 0, 0, 0)
-        layout2.setSpacing(0)
 
         # Create and configure the label
         label = QLabel("Already had an Account?")
@@ -103,7 +102,6 @@ class RegisterWindow:
 
         # Create and configure the sign-up button
         login_button = QPushButton("Sign up")
-        login_button.setFixedHeight(40)  # Standardize button height
         login_button.setStyleSheet("border: none; color: #4757ff; font-size: 12px")
         login_button.clicked.connect(lambda: self.stack_widget.setCurrentIndex(0))
         layout2.addWidget(login_button, 0, 1)
@@ -112,7 +110,7 @@ class RegisterWindow:
         footer.setLayout(layout2)
 
         # Add the footer to the main layout
-        layout.addWidget(footer)
+        layout.addWidget(footer, alignment=Qt.AlignCenter)
 
         window.setLayout(layout)
         layout.setAlignment(Qt.AlignCenter)
