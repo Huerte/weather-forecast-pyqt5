@@ -98,7 +98,7 @@ class LoginWindow:
         if self.name_input.text().strip() == "" or self.password_input.text().strip() == "":
             self.show_error_message(window, "Hayap kaw Loy?", "Empty input field detected!")
 
-        elif self.name_input.text() == "ako" and self.password_input.text() == "password":
+        elif self.name_input.text() == "1" and self.password_input.text() == "1":
             self.clear_input_fields()
             self.stack_widget.setCurrentIndex(2)
         else:

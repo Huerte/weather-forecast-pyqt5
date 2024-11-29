@@ -1,5 +1,5 @@
 import requests
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget
+from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon, QFont
 
@@ -57,7 +57,23 @@ class HomePage:
                 background-color: #f78b8b;
             }
         ''')
-        logout_btn.clicked.connect(lambda: self.stack_widget.setCurrentIndex(0))
+
+        # Define the logout action
+        def confirm_logout():
+            # Create a confirmation dialog
+            confirmation = QMessageBox()
+            confirmation.setIcon(QMessageBox.Warning)
+            confirmation.setWindowTitle("Confirm Logout")
+            confirmation.setText("Are you sure you want to log out?")
+            confirmation.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+
+            # Check the user's response
+            response = confirmation.exec_()
+            if response == QMessageBox.Yes:
+                self.stack_widget.setCurrentIndex(0)
+
+        # Connect the button to the confirmation function
+        logout_btn.clicked.connect(confirm_logout)
         banner.setFixedHeight(80)
         banner_layout.addWidget(logout_btn, alignment=Qt.AlignTop | Qt.AlignRight)
         banner.setLayout(banner_layout)
@@ -117,6 +133,7 @@ class HomePage:
         return home_page
 
     def get_weather(self):
+        print("HEllo richard")
         city = self.search_input.text().title()
         if not city:
             self.result_label.setText("Please enter a city.")
