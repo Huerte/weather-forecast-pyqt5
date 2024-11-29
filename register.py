@@ -126,7 +126,7 @@ class RegisterWindow:
             self.show_error_message(window, "Tarunga lagi ayay", "Password does not match!")
         else:
             self.clear_input_fields()
-            self.stack_widget.setCurrentIndex(2)
+            self.stack_widget.setCurrentIndex(0)
 
     def clear_input_fields(self):
         self.name_input.clear()

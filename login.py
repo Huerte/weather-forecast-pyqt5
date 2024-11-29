@@ -71,9 +71,9 @@ class LoginWindow:
         login_button.setFixedWidth(150)  # Standardize button width
         login_button.setStyleSheet("""
             font-size: 15px;
-            border-radius: 20px;  /* Curve the border */
-            background-color: #007BFF;  /* Add a button color */
-            color: white;  /* Set text color */
+            border-radius: 20px; 
+            background-color: #007BFF; 
+            color: white;  
         """)
         login_button.clicked.connect(lambda: self.proceed_to_home_page(window))
         layout.addWidget(login_button, alignment=Qt.AlignCenter)
@@ -116,8 +116,8 @@ class LoginWindow:
     def show_error_message(window, title, message):
         error_box = QMessageBox(window)
         error_box.setIcon(QMessageBox.Critical)
+        error_box.setStyleSheet("color: white;")
         error_box.setWindowTitle(title)
-        error_box.setStyleSheet("color: white")
         error_box.setText(message)
         error_box.setStandardButtons(QMessageBox.Ok)
         error_box.exec_()
