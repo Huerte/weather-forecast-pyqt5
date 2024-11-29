@@ -1,13 +1,36 @@
-import datetime as dt
 import requests
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtGui import QIcon, QFont
+
+
+class WeatherThread(QThread):
+    data_ready = pyqtSignal(dict)
+    error_occurred = pyqtSignal(str)
+
+    def __init__(self, city):
+        super().__init__()
+        self.city = city
+
+    def run(self):
+        try:
+            Base_Url = "https://api.openweathermap.org/data/2.5/weather?"
+            API_Key = "369f96624e904f3c1ffeaa66a10828ee"
+            url = f"{Base_Url}appid={API_Key}&q={self.city}"
+
+            response = requests.get(url).json()
+            if "main" not in response:
+                raise Exception("City not found or invalid API response.")
+
+            self.data_ready.emit(response)
+        except Exception as e:
+            self.error_occurred.emit(str(e))
 
 
 class HomePage:
-    def __init__(self, stack_widget):
+    def __init__(self, stack_widget: QStackedWidget):
         self.stack_widget = stack_widget
+        self.weather_thread = None
 
     def display(self):
         home_page = QWidget()
@@ -27,7 +50,7 @@ class HomePage:
                 border-radius: 13px;      
                 padding: 5px;         
                 font-size: 15px;   
-                margin: 10px 10px 0, 0;
+                margin: 10px;
                 background-color: #f02222;
             }
             QPushButton:hover {
@@ -35,7 +58,7 @@ class HomePage:
             }
         ''')
         logout_btn.clicked.connect(lambda: self.stack_widget.setCurrentIndex(0))
-        banner.setFixedHeight(80)  # Set fixed height to occupy vertical space
+        banner.setFixedHeight(80)
         banner_layout.addWidget(logout_btn, alignment=Qt.AlignTop | Qt.AlignRight)
         banner.setLayout(banner_layout)
         main_layout.addWidget(banner)
@@ -44,7 +67,6 @@ class HomePage:
         header_page = QWidget()
         header_layout = QHBoxLayout()
         header_layout.setContentsMargins(0, 0, 0, 0)
-        header_layout.setSpacing(0)
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Enter the city")
@@ -73,106 +95,59 @@ class HomePage:
                 background-color: #0080c0;
             }
         ''')
-        self.icon = QIcon("assets/icons/search_icon.png")
-        search_btn.setIcon(self.icon)
+        search_btn.setIcon(QIcon("assets/icons/search_icon.png"))
         search_btn.setFixedSize(60, 40)
-        search_btn.clicked.connect(lambda: self.get_weather())
+        search_btn.clicked.connect(self.get_weather)
         header_layout.addWidget(search_btn)
 
-        header_page.setFixedHeight(60)  # Ensure header takes vertical space
+        header_page.setFixedHeight(60)
         header_page.setLayout(header_layout)
         main_layout.addWidget(header_page)
 
-        # Label Section
-        label = QLabel("Home Pages")
-        label.setStyleSheet("color: white;")
-        label.setFixedHeight(40)  # Space occupied by label
-        main_layout.addWidget(label, alignment=Qt.AlignCenter)
+        self.city_label = QLabel("")
+        self.city_label.setStyleSheet("color: white;")
+        main_layout.addWidget(self.city_label, alignment=Qt.AlignLeft)
+
+        # Weather Result Section
+        self.result_label = QLabel("Weather data will be displayed here.")
+        self.result_label.setStyleSheet("color: white;")
+        main_layout.addWidget(self.result_label, alignment=Qt.AlignCenter)
 
         home_page.setLayout(main_layout)
         return home_page
 
     def get_weather(self):
-        if not self.search_input.text() and self.search_input.text().strip() == "":
+        city = self.search_input.text().title()
+        if not city:
+            self.result_label.setText("Please enter a city.")
             return
 
-        try:
-            Base_Url = "https://api.openweathermap.org/data/2.5/weather?"
-            API_Key = "369f96624e904f3c1ffeaa66a10828ee"
-            CITY = self.search_input.text().title()
+        self.result_label.setText("")
 
-            def kelvin_to_celsius_fahrenheit(kelvin):
-                celsius = kelvin - 273.15
-                fahrenheit = celsius * (9 / 5) + 32
-                return celsius, fahrenheit
+        self.weather_thread = WeatherThread(city)
+        self.weather_thread.data_ready.connect(self.display_weather)
+        self.weather_thread.error_occurred.connect(self.display_error)
+        self.weather_thread.start()
 
-            url = Base_Url + "appid=" + API_Key + "&q=" + CITY
+    def display_weather(self, data):
 
-            response = requests.get(url).json()
+        temp_kelvin = data['main']['temp']
+        temp_celsius = temp_kelvin - 273.15
+        description = data['weather'][0]['description']
+        humidity = data['main']['humidity']
+        wind_speed = data['wind']['speed']
 
-            temp_kelvin = response['main']['temp']
-            temp_celsius, temp_fahrenheit = kelvin_to_celsius_fahrenheit(temp_kelvin)
-            feels_like_kelvin = response['main']['feels_like']
-            feels_like_celsius, feels_like_fahrenheit = kelvin_to_celsius_fahrenheit(feels_like_kelvin)
-            wind_speed = response['wind']['speed']
-            humidity = response['main']['humidity']
-            description = response['weather'][0]['description']
+        weather_details = (
+            f"Temperature: {temp_celsius:.2f}°C\n"
+            f"Description: {description.capitalize()}\n"
+            f"Humidity: {humidity}%\n"
+            f"Wind Speed: {wind_speed} m/s\n"
+        )
 
-            # Define timezone offset
-            timezone_offset = response['timezone']
+        self.city_label.setText(self.search_input.text())
+        self.city_label.setFont(QFont("Arial", 20, QFont.Bold))
 
-            # Convert the timestamps to timezone-aware datetime objects
-            sunrise_time = dt.datetime.fromtimestamp(response['sys']['sunrise'],
-                                                     tz=dt.timezone(dt.timedelta(seconds=timezone_offset)))
-            sunset_time = dt.datetime.fromtimestamp(response['sys']['sunset'],
-                                                    tz=dt.timezone(dt.timedelta(seconds=timezone_offset)))
+        self.result_label.setText(weather_details)
 
-            print(f"Temperature in {CITY}: {temp_celsius:.2f}°C or {temp_fahrenheit}°F")
-            print(f"Temperature in {CITY}: feels like: {feels_like_celsius:.2f}°C or {feels_like_fahrenheit}")
-            print(f"Humidity in {CITY}: {humidity}%")
-            print(f"Wind Speed in {CITY}: {wind_speed}m/s")
-            print(f"General Weather in {CITY}: {description}")
-            print(f"Sun rises in {CITY} at {sunrise_time} local time.")
-            print(f"Sun sets in {CITY} at {sunset_time} local time.")
-        except Exception as e:
-            print(f"Error Found: {e}")
-            
-'''
-        self.setWindowTitle("Progress Bar Example")
-        self.setGeometry(200, 200, 300, 150)
-
-        # Create central widget and layout
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
-        layout = QVBoxLayout()
-        self.central_widget.setLayout(layout)
-
-        # Create ProgressBar
-        self.progress_bar = QProgressBar(self)
-        self.progress_bar.setMaximum(100)
-        layout.addWidget(self.progress_bar)
-
-        # Create a button to start progress
-        self.start_button = QPushButton("Start")
-        self.start_button.clicked.connect(self.start_progress)
-        layout.addWidget(self.start_button)
-
-        # Timer for updating progress
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_progress)
-
-        self.progress_value = 0
-
-    def start_progress(self):
-        self.progress_value = 0
-        self.progress_bar.setValue(self.progress_value)
-        self.timer.start(100)  # Update every 100 ms
-
-    def update_progress(self):
-        if self.progress_value < 100:
-            self.progress_value += 1
-            self.progress_bar.setValue(self.progress_value)
-        else:
-            self.timer.stop()
-
-'''
+    def display_error(self, error_message):
+        self.result_label.setText(f"Error: {error_message}")

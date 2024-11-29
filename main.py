@@ -14,21 +14,21 @@ class MainWindow:
     self.main_window = qtw.QMainWindow()
     self.main_window.setWindowTitle("Binoang na Window")
     self.main_window.setStyleSheet(f"background-color: #131621;")
-    size = 800
-    self.main_window.setGeometry(size, size, 400, 400)
+    WIDTH, HEIGHT = 450, 400
+    self.main_window.setGeometry(0, 0, WIDTH, HEIGHT)
 
 
     self.stack_widget = qtw.QStackedWidget()
-
     self.login_page = LoginWindow(self.stack_widget).display()
     self.register_page = RegisterWindow(self.stack_widget).display()
     self.home_page = HomePage(self.stack_widget).display()
 
     # Amo ini an pagkasunod nan mga window, index zero an una mo
     # respawn na page pag run ng program
+    self.stack_widget.addWidget(self.home_page)  #index 2
+
     self.stack_widget.addWidget(self.login_page)  #index 0
     self.stack_widget.addWidget(self.register_page)  #index 1
-    self.stack_widget.addWidget(self.home_page)  #index 2
 
     self.main_window.setCentralWidget(self.stack_widget)
 
