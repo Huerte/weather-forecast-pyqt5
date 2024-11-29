@@ -136,3 +136,43 @@ class HomePage:
             print(f"Sun sets in {CITY} at {sunset_time} local time.")
         except Exception as e:
             print(f"Error Found: {e}")
+            
+'''
+        self.setWindowTitle("Progress Bar Example")
+        self.setGeometry(200, 200, 300, 150)
+
+        # Create central widget and layout
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+        layout = QVBoxLayout()
+        self.central_widget.setLayout(layout)
+
+        # Create ProgressBar
+        self.progress_bar = QProgressBar(self)
+        self.progress_bar.setMaximum(100)
+        layout.addWidget(self.progress_bar)
+
+        # Create a button to start progress
+        self.start_button = QPushButton("Start")
+        self.start_button.clicked.connect(self.start_progress)
+        layout.addWidget(self.start_button)
+
+        # Timer for updating progress
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_progress)
+
+        self.progress_value = 0
+
+    def start_progress(self):
+        self.progress_value = 0
+        self.progress_bar.setValue(self.progress_value)
+        self.timer.start(100)  # Update every 100 ms
+
+    def update_progress(self):
+        if self.progress_value < 100:
+            self.progress_value += 1
+            self.progress_bar.setValue(self.progress_value)
+        else:
+            self.timer.stop()
+
+'''
