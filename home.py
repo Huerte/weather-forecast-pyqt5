@@ -2,7 +2,7 @@ import requests
 from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon, QFont
-
+import time
 
 class WeatherThread(QThread):
     data_ready = pyqtSignal(dict)
@@ -35,9 +35,10 @@ class HomePage:
 
     def display(self):
         home_page = QWidget()
-        main_layout = QVBoxLayout()
+        self.main_layout = QVBoxLayout()
 
         # Banner (Log Out Section)
+
         banner = QWidget()
         banner_layout = QVBoxLayout()
         banner_layout.setContentsMargins(0, 0, 0, 0)
@@ -78,7 +79,7 @@ class HomePage:
         banner.setFixedHeight(80)
         banner_layout.addWidget(logout_btn, alignment=Qt.AlignTop | Qt.AlignRight)
         banner.setLayout(banner_layout)
-        main_layout.addWidget(banner)
+        self.main_layout.addWidget(banner)
 
         # Header Page (Search Bar Section)
         header_page = QWidget()
@@ -119,18 +120,18 @@ class HomePage:
 
         header_page.setFixedHeight(60)
         header_page.setLayout(header_layout)
-        main_layout.addWidget(header_page)
+        self.main_layout.addWidget(header_page)
 
         self.city_label = QLabel()
         self.city_label.setStyleSheet("color: white")
-        main_layout.addWidget(self.city_label)
+        self.main_layout.addWidget(self.city_label)
 
         # Weather Result Section
         self.result_label = QLabel("Weather data will be displayed here.")
         self.result_label.setStyleSheet("color: white;")
-        main_layout.addWidget(self.result_label, alignment=Qt.AlignCenter)
+        self.main_layout.addWidget(self.result_label, alignment=Qt.AlignCenter | Qt.AlignTop)
 
-        home_page.setLayout(main_layout)
+        home_page.setLayout(self.main_layout)
         return home_page
 
     def get_weather(self):
@@ -146,24 +147,62 @@ class HomePage:
         self.weather_thread.start()
 
     def display_weather(self, data):
+        self.result_label.deleteLater()
 
         temp_kelvin = data['main']['temp']
         temp_celsius = temp_kelvin - 273.15
+        feels_like_celsius = data['main']['feels_like'] - 273.15
         description = data['weather'][0]['description']
         humidity = data['main']['humidity']
         wind_speed = data['wind']['speed']
+        pressure = data['main']['pressure']
+        cloudiness = data['clouds']['all']
+        visibility_km = data['visibility'] / 1000
+        sunrise_time = time.strftime('%H:%M:%S', time.gmtime(data['sys']['sunrise'] + data['timezone']))
+        sunset_time = time.strftime('%H:%M:%S', time.gmtime(data['sys']['sunset'] + data['timezone']))
 
-        weather_details = (
-            f"Temperature: {temp_celsius:.2f}°C\n"
-            f"Description: {description.capitalize()}\n"
-            f"Humidity: {humidity}%\n"
-            f"Wind Speed: {wind_speed} m/s\n"
-        )
+        # Create widgets for each data point
+        city_label = QLabel(self.search_input.text().title())
+        city_label.setFont(QFont("Arial", 24, QFont.Bold))
+        city_label.setAlignment(Qt.AlignCenter)
 
-        self.city_label.setText(self.search_input.text().title())
-        self.city_label.setFont(QFont("Arial", 20, QFont.Bold))
+        temp_label = QLabel(f"Temperature: {temp_celsius:.2f}°C")
+        feels_like_label = QLabel(f"Feels Like: {feels_like_celsius:.2f}°C")
+        description_label = QLabel(f"Description: {description.capitalize()}")
+        humidity_label = QLabel(f"Humidity: {humidity}%")
+        wind_speed_label = QLabel(f"Wind Speed: {wind_speed} m/s")
+        pressure_label = QLabel(f"Pressure: {pressure} hPa")
+        cloudiness_label = QLabel(f"Cloudiness: {cloudiness}%")
+        visibility_label = QLabel(f"Visibility: {visibility_km:.2f} km")
+        sunrise_label = QLabel(f"Sunrise: {sunrise_time}")
+        sunset_label = QLabel(f"Sunset: {sunset_time}")
 
-        self.result_label.setText(weather_details)
+        # Style labels
+        for label in [temp_label, feels_like_label, description_label, humidity_label,
+                      wind_speed_label, pressure_label, cloudiness_label, visibility_label,
+                      sunrise_label, sunset_label]:
+            label.setFont(QFont("Arial", 14))
+            label.setAlignment(Qt.AlignLeft)
+
+        # Organize widgets into layouts
+        weather_layout = QVBoxLayout()
+        weather_layout.addWidget(city_label)
+        weather_layout.addWidget(temp_label)
+        weather_layout.addWidget(feels_like_label)
+        weather_layout.addWidget(description_label)
+        weather_layout.addWidget(humidity_label)
+        weather_layout.addWidget(wind_speed_label)
+        weather_layout.addWidget(pressure_label)
+        weather_layout.addWidget(cloudiness_label)
+        weather_layout.addWidget(visibility_label)
+        weather_layout.addWidget(sunrise_label)
+        weather_layout.addWidget(sunset_label)
+
+        # Create main widget
+        main_widget = QWidget()
+        main_widget.setLayout(weather_layout)
+
+        self.main_layout.addWidget(main_widget)
 
     def display_error(self, error_message):
         self.result_label.setText(f"Error: {error_message}")
