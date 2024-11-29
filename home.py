@@ -38,21 +38,35 @@ class HomePage:
         self.main_layout = QVBoxLayout()
 
         # Banner (Log Out Section)
-
         banner = QWidget()
         banner_layout = QVBoxLayout()
         banner_layout.setContentsMargins(0, 0, 0, 0)
         banner_layout.setSpacing(0)
 
+        menu_btn = QPushButton()
+        menu_btn.setIcon(QIcon("assets/icons/menu.png"))
+        menu_btn.clicked.connect(lambda: self.open_menu())
+
+        self.menu_panel = QWidget()
+        # Remove fixed width to allow dynamic resizing
+        self.menu_panel.setStyleSheet("background-color: transparent; padding: 10px;")
+
+        self.menu_panel.hide()
+        menu_layout = QVBoxLayout()
+
+        username = "Richard"
+        username_label = QLabel(username)
+        username_label.setStyleSheet("font-size: 15px; color: white; padding: 30px;")
+        menu_layout.addWidget(username_label, alignment=Qt.AlignCenter | Qt.AlignTop)
+
         logout_btn = QPushButton("Log out")
+        logout_btn.setFixedHeight(30)  # Adjust the height for better visibility
         logout_btn.setStyleSheet('''
             QPushButton {
                 border: none;
                 color: white;
-                border-radius: 13px;      
-                padding: 5px;         
-                font-size: 15px;   
-                margin: 10px;
+                border-radius: 15px;   
+                font-size: 15px; 
                 background-color: #f02222;
             }
             QPushButton:hover {
@@ -77,7 +91,15 @@ class HomePage:
         # Connect the button to the confirmation function
         logout_btn.clicked.connect(confirm_logout)
         banner.setFixedHeight(80)
-        banner_layout.addWidget(logout_btn, alignment=Qt.AlignTop | Qt.AlignRight)
+        menu_layout.addWidget(logout_btn, alignment=Qt.AlignCenter | Qt.AlignTop)
+
+        # Add stretch to ensure dynamic resizing
+        menu_layout.addStretch()
+
+        self.menu_panel.setLayout(menu_layout)
+        banner_layout.addWidget(menu_btn, alignment=Qt.AlignTop | Qt.AlignRight)
+
+        banner_layout.addWidget(self.menu_panel, alignment=Qt.AlignTop | Qt.AlignRight)
         banner.setLayout(banner_layout)
         self.main_layout.addWidget(banner)
 
@@ -85,8 +107,8 @@ class HomePage:
         header_page = QWidget()
         header_page.setFixedWidth(300)
         header_layout = QHBoxLayout()
-        header_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins around the layout
-        header_layout.setSpacing(5)  # Set the space between the search input and button to 5px
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(5)
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Enter the city")
@@ -100,7 +122,6 @@ class HomePage:
             }
         ''')
         self.search_input.setFixedHeight(40)
-        # Removed fixed width, allowing it to take available space
         header_layout.addWidget(self.search_input)
 
         search_btn = QPushButton()
@@ -116,7 +137,7 @@ class HomePage:
             }
         ''')
         search_btn.setIcon(QIcon("assets/icons/search_icon.png"))
-        search_btn.setFixedSize(60, 40)  # Fixed size for button
+        search_btn.setFixedSize(60, 40)
         search_btn.clicked.connect(self.get_weather)
         header_layout.addWidget(search_btn)
 
@@ -136,6 +157,12 @@ class HomePage:
 
         home_page.setLayout(self.main_layout)
         return home_page
+
+    def open_menu(self):
+        if self.menu_panel.isHidden():
+            self.menu_panel.show()
+            return
+        self.menu_panel.hide()
 
     def get_weather(self):
         city = self.search_input.text().title()

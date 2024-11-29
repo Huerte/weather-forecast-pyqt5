@@ -24,7 +24,6 @@ class RegisterWindow:
 
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("Enter your name")
-        #self.name_input.setStyleSheet("font-size: 15px; color: white")
         self.name_input.setStyleSheet("""
             QLineEdit {
                 border-color: none;
