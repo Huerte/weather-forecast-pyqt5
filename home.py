@@ -30,6 +30,11 @@ class WeatherThread(QThread):
 
 class HomePage:
     def __init__(self, stack_widget: QStackedWidget):
+        self.result_label = None
+        self.city_label = None
+        self.search_input = None
+        self.main_layout = None
+        self.menu_panel = None
         self.stack_widget = stack_widget
         self.weather_thread = None
 

@@ -1,19 +1,23 @@
-from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QLineEdit, QMessageBox, QSizePolicy
+from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QLineEdit
 from PyQt5.QtCore import Qt
+import sqlite3 as sql
+import bcrypt
+from message_display import show_error_message
 
 
 class LoginWindow:
     def __init__(self, stack_widget):
+        self.window = None
         self.stack_widget = stack_widget
         self.name_input = ""
         self.password_input = ""
 
     def display(self):
-        # Create the main window
-        window = QWidget()
-        window.setWindowTitle("Login Page")
+        # Create the main selfwindow
+        self.window = QWidget()
+        self.window.setWindowTitle("Login Page")
 
-        # Create a vertical layout for the window
+        # Create a vertical layout for the selfwindow
         layout = QVBoxLayout()
 
         layout.addSpacing(20)
@@ -75,7 +79,7 @@ class LoginWindow:
             background-color: #007BFF; 
             color: white;  
         """)
-        login_button.clicked.connect(lambda: self.proceed_to_home_page(window))
+        login_button.clicked.connect(lambda: self.proceed_to_home_page())
         layout.addWidget(login_button, alignment=Qt.AlignCenter)
 
         layout.addSpacing(5)
@@ -88,36 +92,53 @@ class LoginWindow:
         register_button.clicked.connect(lambda: self.proceed_to_register_page())
         layout.addWidget(register_button, alignment=Qt.AlignCenter)
 
-        # Set the layout to the main window and align contents to the center
-        window.setLayout(layout)
+        # Set the layout to the main selfwindow and align contents to the center
+        self.window.setLayout(layout)
         layout.setAlignment(Qt.AlignCenter)
 
-        return window
+        return self.window
 
-    def proceed_to_home_page(self, window):
+    def proceed_to_home_page(self):
         if self.name_input.text().strip() == "" or self.password_input.text().strip() == "":
-            self.show_error_message(window, "Hayap kaw Loy?", "Empty input field detected!")
-
-        elif self.name_input.text() == "1" and self.password_input.text() == "1":
-            self.clear_input_fields()
-            self.stack_widget.setCurrentIndex(2)
-        else:
-            self.show_error_message(window, "Error Loy", "User Does Not Exist!")
+            show_error_message(self.window, "Hayap kaw Loy?", "Empty input field detected!")
+        elif self.login_account(self.name_input.text(), self.password_input.text().strip()):
             self.clear_input_fields()
 
-    def proceed_to_register_page(self):
-        self.stack_widget.setCurrentIndex(1)
+    def login_account(self, username, password):
+        database_path = "auth/user_accounts.db"
+        conn = sql.connect(database_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute('SELECT password FROM users WHERE username = ?', (username,))
+            user = cursor.fetchone()
+
+            if user:
+                stored_hashed_password = user[0]
+                if bcrypt.checkpw(password.encode('utf-8'), stored_hashed_password.encode('utf-8')):
+                    print(f"Welcome back, {username}!")
+                    self.stack_widget.setCurrentIndex(2)
+                    return True
+                else:
+                    print("Invalid password!")
+                    self.password_input.clear()
+                    return False
+            else:
+                show_error_message(self.window, "Account does not exists!", "Invalid username or password")
+                self.clear_input_fields()
+                return False
+        except Exception as e:
+            print(f"{e}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
 
     def clear_input_fields(self):
         self.name_input.clear()
         self.password_input.clear()
 
-    @staticmethod
-    def show_error_message(window, title, message):
-        error_box = QMessageBox(window)
-        error_box.setIcon(QMessageBox.Critical)
-        error_box.setStyleSheet("color: white;")
-        error_box.setWindowTitle(title)
-        error_box.setText(message)
-        error_box.setStandardButtons(QMessageBox.Ok)
-        error_box.exec_()
+    def proceed_to_register_page(self):
+        self.stack_widget.setCurrentIndex(1)
+
+    

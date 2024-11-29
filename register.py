@@ -1,5 +1,9 @@
 from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QLineEdit, QMessageBox, QGridLayout
 from PyQt5.QtCore import Qt
+import sqlite3 as sql
+import bcrypt #install bcrypt
+from message_display import show_info_message, show_error_message
+
 
 
 class RegisterWindow:
@@ -9,9 +13,9 @@ class RegisterWindow:
         self.password_input, self.password2_input = "", ""
 
     def display(self):
-        window = QWidget()
+        self.window = QWidget()
 
-        # Create a vertical layout for the window
+        # Create a vertical layout for the self.window
         layout = QVBoxLayout()
 
         layout.addSpacing(20)
@@ -85,7 +89,7 @@ class RegisterWindow:
                     background-color: #007BFF;
                     color: white;
                 """)
-        register_button.clicked.connect(lambda: self.proceed_to_home_page(window))
+        register_button.clicked.connect(lambda: self.proceed_to_home_page())
         layout.addWidget(register_button, alignment=Qt.AlignCenter)
 
         layout.addSpacing(5)
@@ -111,30 +115,45 @@ class RegisterWindow:
         # Add the footer to the main layout
         layout.addWidget(footer, alignment=Qt.AlignCenter)
 
-        window.setLayout(layout)
+        self.window.setLayout(layout)
         layout.setAlignment(Qt.AlignCenter)
 
-        return window
+        return self.window
 
-    def proceed_to_home_page(self, window):
+    def proceed_to_home_page(self):
         if self.name_input.text().strip() == "" or self.password_input.text().strip() == "":
-            self.show_error_message(window, "Hayap kaw Loy?", "Empty input field detected!")
+            show_error_message(self.window, "Hayap kaw Loy?", "Empty input field detected!")
         elif self.password_input.text() != self.password2_input.text():
-            self.show_error_message(window, "Tarunga lagi ayay laman!", "Password does not match!")
+            show_error_message(self.window, "Tarunga lagi ayay laman!", "Password does not match!")
         else:
+            self.register_account(self.name_input.text(), self.password_input.text())
+
+    def register_account(self, username, password):
+        database_path = "auth/user_accounts.db"
+        conn = sql.connect(database_path)
+        cursor = conn.cursor()
+
+        # Hash password and decode to store as text in SQLite
+        hash_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        try:
+            cursor.execute('''
+            INSERT INTO users (username, password)
+            VALUES (?, ?)
+            ''', (username, hash_password))
+            conn.commit()
+            show_info_message(self.window, "Hoy!", "User account\nsuccessfully created!")
             self.clear_input_fields()
             self.stack_widget.setCurrentIndex(0)
+        except sql.IntegrityError as e:
+            if "UNIQUE constraint failed" in str(e):
+                show_error_message(self.window, "Kausik naunhan nakaw!", "Username already exists!")
+            else:
+                print("Error:", e)
+        finally:
+            cursor.close()
+            conn.close()
 
     def clear_input_fields(self):
         self.name_input.clear()
         self.password_input.clear()
-
-    @staticmethod
-    def show_error_message(window, title, message):
-        error_box = QMessageBox(window)
-        error_box.setIcon(QMessageBox.Critical)
-        error_box.setStyleSheet("color: white")
-        error_box.setWindowTitle(title)
-        error_box.setText(message)
-        error_box.setStandardButtons(QMessageBox.Ok)
-        error_box.exec_()
+        self.password2_input.clear()
