@@ -19,6 +19,7 @@ class WeatherThread(QThread):
             url = f"{Base_Url}appid={API_Key}&q={self.city}"
 
             response = requests.get(url).json()
+            print(response)
             if "main" not in response:
                 raise Exception("City not found or invalid API response.")
 
@@ -120,9 +121,9 @@ class HomePage:
         header_page.setLayout(header_layout)
         main_layout.addWidget(header_page)
 
-        self.city_label = QLabel("")
-        self.city_label.setStyleSheet("color: white;")
-        main_layout.addWidget(self.city_label, alignment=Qt.AlignLeft)
+        self.city_label = QLabel()
+        self.city_label.setStyleSheet("color: white")
+        main_layout.addWidget(self.city_label)
 
         # Weather Result Section
         self.result_label = QLabel("Weather data will be displayed here.")
@@ -132,17 +133,12 @@ class HomePage:
         home_page.setLayout(main_layout)
         return home_page
 
-    def fun(self):
-        pass
-
     def get_weather(self):
         print("HEllo richard")
         city = self.search_input.text().title()
         if not city:
             self.result_label.setText("Please enter a city.")
             return
-
-        self.result_label.setText("")
 
         self.weather_thread = WeatherThread(city)
         self.weather_thread.data_ready.connect(self.display_weather)
@@ -164,7 +160,7 @@ class HomePage:
             f"Wind Speed: {wind_speed} m/s\n"
         )
 
-        self.city_label.setText(self.search_input.text())
+        self.city_label.setText(self.search_input.text().title())
         self.city_label.setFont(QFont("Arial", 20, QFont.Bold))
 
         self.result_label.setText(weather_details)
