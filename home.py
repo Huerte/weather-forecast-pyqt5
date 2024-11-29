@@ -132,6 +132,9 @@ class HomePage:
         home_page.setLayout(main_layout)
         return home_page
 
+    def fun(self):
+        pass
+
     def get_weather(self):
         print("HEllo richard")
         city = self.search_input.text().title()
