@@ -81,8 +81,9 @@ class RegisterWindow:
         layout.addSpacing(20)
 
         register_button = QPushButton("Register")
-        register_button.setFixedHeight(40)  # Standardize button height
-        register_button.setFixedWidth(150)  # Standardize button width
+        register_button.setFocusPolicy(Qt.NoFocus)
+        register_button.setFixedHeight(40)
+        register_button.setFixedWidth(150)
         register_button.setStyleSheet("""
                     font-size: 15px;
                     border-radius: 20px;
@@ -105,6 +106,7 @@ class RegisterWindow:
 
         # Create and configure the sign-up button
         login_button = QPushButton("Sign up")
+        login_button.setFocusPolicy(Qt.NoFocus)
         login_button.setStyleSheet("border: none; color: #4757ff; font-size: 12px")
         login_button.clicked.connect(lambda: self.stack_widget.setCurrentIndex(0))
         layout2.addWidget(login_button, 0, 1)

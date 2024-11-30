@@ -71,6 +71,7 @@ class LoginWindow:
 
         # Create and configure the login button
         login_button = QPushButton("Login")
+        login_button.setFocusPolicy(Qt.NoFocus)
         login_button.setFixedHeight(40)  # Standardize button height
         login_button.setFixedWidth(150)  # Standardize button width
         login_button.setStyleSheet("""
@@ -85,6 +86,7 @@ class LoginWindow:
         layout.addSpacing(5)
 
         register_button = QPushButton("Create an account")
+        register_button.setFocusPolicy(Qt.NoFocus)
         register_button.setFixedHeight(40)  # Standardize button height
         register_button.setFixedWidth(150)  # Standardize button width
         register_button.setStyleSheet("border: none; font-size: 12px; color: white")

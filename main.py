@@ -34,7 +34,6 @@ class MainWindow:
 
     # Amo ini an pagkasunod nan mga window, index zero an una mo
     # respawn na page pag run ng program
-
     self.stack_widget.addWidget(self.login_page)  # index 0
     self.stack_widget.addWidget(self.register_page)  # index 1
     self.stack_widget.addWidget(self.home_page)  # index 2
