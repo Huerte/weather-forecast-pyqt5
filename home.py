@@ -171,18 +171,10 @@ class HomePage:
         self.home_page.setLayout(self.main_layout)
         return self.home_page
 
-    def open_menu(self):
-        if self.menu_panel.isHidden():
-            print(self.menu_btn.width())
-            pos = self.menu_btn.mapToGlobal(QPoint(-9, -9))
-            self.menu_panel.move(pos)
-            self.menu_panel.show()
-        else:
-            self.menu_panel.hide()
-
     def confirm_logout(self):
         # Create a confirmation dialog
-        confirmation = QMessageBox()
+        confirmation = QMessageBox(self.home_page)
+        confirmation.setStyleSheet("")
         confirmation.setIcon(QMessageBox.Warning)
         confirmation.setWindowTitle("Confirm Logout")
         confirmation.setText("Are you sure you want to log out?")
@@ -192,6 +184,15 @@ class HomePage:
         response = confirmation.exec_()
         if response == QMessageBox.Yes:
             self.stack_widget.setCurrentIndex(0)
+
+    def open_menu(self):
+        if self.menu_panel.isHidden():
+            print(self.menu_btn.width())
+            pos = self.menu_btn.mapToGlobal(QPoint(-9, -9))
+            self.menu_panel.move(pos)
+            self.menu_panel.show()
+        else:
+            self.menu_panel.hide()
 
     def get_weather(self):
         city = self.search_input.text().title()
@@ -205,12 +206,16 @@ class HomePage:
         self.weather_thread.start()
 
     def display_weather(self, data):
-        self.result_label.setText("")  # Clear previous result if needed
+        self.result_label.setText("")
+        if hasattr(self, 'scroll_area') and self.scroll_area:
+            self.main_layout.removeWidget(self.scroll_area)
+            self.scroll_area.deleteLater()
+            self.scroll_area = None
 
         # Create QScrollArea for scrolling weather details
-        scroll_area = QScrollArea()
-        scroll_area.setStyleSheet("border: none")
-        scroll_area.setWidgetResizable(True)  # Allow scrollable content to resize
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setStyleSheet("border: none")
+        self.scroll_area.setWidgetResizable(True)  # Allow scrollable content to resize
 
         temp_kelvin = data['main']['temp']
         temp_celsius = temp_kelvin - 273.15
@@ -268,10 +273,10 @@ class HomePage:
         scroll_widget.setLayout(weather_layout)
 
         # Add container widget to the scroll area
-        scroll_area.setWidget(scroll_widget)
+        self.scroll_area.setWidget(scroll_widget)
 
         # Add scroll area to the main layout
-        self.main_layout.addWidget(scroll_area)
+        self.main_layout.addWidget(self.scroll_area)
 
     @staticmethod
     def create_separator():
