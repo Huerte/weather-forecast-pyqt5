@@ -2,7 +2,7 @@ import requests
 from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, \
     QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget, \
     QFrame, QScrollArea
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPoint, QSize
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPoint, QSize, QEvent
 from PyQt5.QtGui import QIcon, QFont
 import time
 
@@ -32,6 +32,7 @@ class WeatherThread(QThread):
 
 class HomePage:
     def __init__(self, stack_widget: QStackedWidget):
+        self.home_stack_widget = None
         self.home_page = None
         self.menu_btn = None
         self.result_label = None
@@ -72,54 +73,17 @@ class HomePage:
         self.menu_panel.hide()
 
         menu_layout = QVBoxLayout()
-        username = "Richard"
-        username_label = QLabel(username)
-        username_label.setStyleSheet("font-size: 15px; color: white; margin: 0px;")
-        menu_layout.addWidget(username_label, alignment=Qt.AlignCenter)
 
-        menu_layout.addWidget(self.create_separator())
+        self.home_stack_widget = QStackedWidget()
 
-        # Settings button
-        settings_btn = QPushButton("Settings")
-        settings_btn.setFixedHeight(30)
-        settings_btn.setFocusPolicy(Qt.NoFocus)
-        settings_btn.setStyleSheet('''
-            QPushButton {
-                border: none;
-                color: white;
-                border-radius: 15px;
-                padding: 5px;
-                margin: 0px;
-                font-size: 15px;
-                background-color: #2d89ef;
-            }
-            QPushButton:hover {
-                background-color: #5ba8f5;
-            }
-        ''')
-        menu_layout.addWidget(settings_btn, alignment=Qt.AlignCenter)
+        menu_buttons_widget = self.display_widgets()
+        settings_window = self.display_settings()
 
-        logout_btn = QPushButton("Log out")
-        logout_btn.setFixedHeight(30)
-        logout_btn.setFocusPolicy(Qt.NoFocus)
-        logout_btn.setStyleSheet('''
-            QPushButton {
-                border: none;
-                color: white;
-                border-radius: 15px;
-                padding: 5px;
-                margin: 0px;
-                font-size: 15px;
-                background-color: #f02222;
-            }
-            QPushButton:hover {.setFocusPolicy(Qt.NoFocus)
-                background-color: #f78b8b;
-            }
-        ''')
-        logout_btn.clicked.connect(self.confirm_logout)
-        menu_layout.addWidget(logout_btn, alignment=Qt.AlignCenter | Qt.AlignBottom)
+        self.home_stack_widget.addWidget(menu_buttons_widget)
+        self.home_stack_widget.addWidget(settings_window)
 
-        menu_layout.addStretch()
+        menu_layout.addWidget(self.home_stack_widget)
+
         self.menu_panel.setLayout(menu_layout)
 
         # Add the menu button to the layout
@@ -191,6 +155,73 @@ class HomePage:
         self.home_page.setLayout(self.main_layout)
         return self.home_page
 
+    def display_settings(self):
+        settings_page = QWidget()
+        settings_layout = QVBoxLayout()
+
+        exit_settings_btn = QPushButton("Exit")
+        exit_settings_btn.setStyleSheet("background-color: red")
+        exit_settings_btn.clicked.connect(lambda: self.home_stack_widget.setCurrentIndex(0))
+        settings_layout.addWidget(exit_settings_btn)
+
+        settings_layout.addWidget(QLabel("Settings"), alignment=Qt.AlignCenter)
+
+        settings_page.setLayout(settings_layout)
+        return settings_page
+
+    def display_widgets(self):
+        menu_layout = QVBoxLayout()
+        username = "Richard"
+        username_label = QLabel(username)
+        username_label.setStyleSheet("font-size: 15px; color: white; margin: 0px;")
+        menu_layout.addWidget(username_label, alignment=Qt.AlignCenter)
+        menu_layout.addWidget(self.create_separator())
+        # Settings button
+        settings_btn = QPushButton("Settings")
+        settings_btn.setFixedHeight(30)
+        settings_btn.setFocusPolicy(Qt.NoFocus)
+        settings_btn.clicked.connect(lambda: self.home_stack_widget.setCurrentIndex(1))
+        settings_btn.setStyleSheet('''
+                    QPushButton {
+                        border: none;
+                        color: white;
+                        border-radius: 15px;
+                        padding: 5px;
+                        margin: 0px;
+                        font-size: 15px;
+                        background-color: #2d89ef;
+                    }
+                    QPushButton:hover {
+                        background-color: #5ba8f5;
+                    }
+                ''')
+        menu_layout.addWidget(settings_btn, alignment=Qt.AlignCenter)
+
+        logout_btn = QPushButton("Log out")
+        logout_btn.setFixedHeight(30)
+        logout_btn.setFocusPolicy(Qt.NoFocus)
+        logout_btn.setStyleSheet('''
+                    QPushButton {
+                        border: none;
+                        color: white;
+                        border-radius: 15px;
+                        padding: 5px;
+                        margin: 0px;
+                        font-size: 15px;
+                        background-color: #f02222;
+                    }
+                    QPushButton:hover {.setFocusPolicy(Qt.NoFocus)
+                        background-color: #f78b8b;
+                    }
+                ''')
+        logout_btn.clicked.connect(self.confirm_logout)
+        menu_layout.addWidget(logout_btn, alignment=Qt.AlignCenter | Qt.AlignBottom)
+        menu_layout.addStretch()
+        menu = QWidget()
+        menu.setLayout(menu_layout)
+
+        return menu
+
     def confirm_logout(self):
         # Create a confirmation dialog
         confirmation = QMessageBox(self.home_page)
@@ -207,7 +238,6 @@ class HomePage:
 
     def open_menu(self):
         if self.menu_panel.isHidden():
-            print(self.menu_btn.width())
             pos = self.menu_btn.mapToGlobal(QPoint(-9, -9))
             self.menu_panel.move(pos)
             self.menu_panel.show()
