@@ -53,9 +53,9 @@ class HomePage:
 
         # Banner (Log Out Section)
         banner = QWidget()
-        banner.setStyleSheet("margin-top: 0px;")
+        banner.setStyleSheet("margin-top: -5px;")
         banner_layout = QVBoxLayout()
-        banner_layout.setContentsMargins(0, 0, 0, 0)
+        banner_layout.setContentsMargins(-5, -5, 0, 0)
         banner_layout.setSpacing(0)
 
         self.menu_btn = QPushButton()
@@ -78,6 +78,26 @@ class HomePage:
         menu_layout.addWidget(username_label, alignment=Qt.AlignCenter)
 
         menu_layout.addWidget(self.create_separator())
+
+        # Settings button
+        settings_btn = QPushButton("Settings")
+        settings_btn.setFixedHeight(30)
+        settings_btn.setFocusPolicy(Qt.NoFocus)
+        settings_btn.setStyleSheet('''
+            QPushButton {
+                border: none;
+                color: white;
+                border-radius: 15px;
+                padding: 5px;
+                margin: 0px;
+                font-size: 15px;
+                background-color: #2d89ef;
+            }
+            QPushButton:hover {
+                background-color: #5ba8f5;
+            }
+        ''')
+        menu_layout.addWidget(settings_btn, alignment=Qt.AlignCenter)
 
         logout_btn = QPushButton("Log out")
         logout_btn.setFixedHeight(30)
