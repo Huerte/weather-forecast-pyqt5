@@ -46,9 +46,14 @@ class HomePage:
     def display(self):
         self.home_page = QWidget()
         self.main_layout = QVBoxLayout()
+        self.main_layout.setContentsMargins(10, 0, 10, 0)
+
+        top_layout = QHBoxLayout()
+        top_layout.setContentsMargins(0, 0, 0, 0)
 
         # Banner (Log Out Section)
         banner = QWidget()
+        banner.setStyleSheet("margin-top: 0px;")
         banner_layout = QVBoxLayout()
         banner_layout.setContentsMargins(0, 0, 0, 0)
         banner_layout.setSpacing(0)
@@ -76,6 +81,7 @@ class HomePage:
 
         logout_btn = QPushButton("Log out")
         logout_btn.setFixedHeight(30)
+        logout_btn.setFocusPolicy(Qt.NoFocus)
         logout_btn.setStyleSheet('''
             QPushButton {
                 border: none;
@@ -86,7 +92,7 @@ class HomePage:
                 font-size: 15px;
                 background-color: #f02222;
             }
-            QPushButton:hover {
+            QPushButton:hover {.setFocusPolicy(Qt.NoFocus)
                 background-color: #f78b8b;
             }
         ''')
@@ -97,7 +103,11 @@ class HomePage:
         self.menu_panel.setLayout(menu_layout)
 
         # Add the menu button to the layout
-        banner_layout.addWidget(self.menu_btn, alignment=Qt.AlignTop | Qt.AlignRight)
+        banner_layout.addWidget(self.menu_btn)
+
+        banner.setLayout(banner_layout)
+
+        top_layout.addWidget(banner, alignment=Qt.AlignLeft)
 
         # Header Page (Search Bar Section)
         header_page = QWidget()
@@ -108,6 +118,7 @@ class HomePage:
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Enter the city")
+        self.search_input.returnPressed.connect(self.get_weather)
         self.search_input.setStyleSheet('''
             QLineEdit {
                 border: 0.5px solid white;
@@ -141,10 +152,13 @@ class HomePage:
 
         header_page.setFixedHeight(60)
         header_page.setLayout(header_layout)
+        top_layout.addWidget(header_page, alignment=Qt.AlignRight)
 
-        banner_layout.addWidget(header_page, alignment=Qt.AlignCenter)
-        banner.setLayout(banner_layout)
-        self.main_layout.addWidget(banner)
+        top_widget = QWidget()
+        top_widget.setStyleSheet("margin-top: 0px;")
+        top_widget.setLayout(top_layout)
+
+        self.main_layout.addWidget(top_widget, alignment=Qt.AlignTop)
 
         self.city_label = QLabel()
         self.city_label.setStyleSheet("color: white")
@@ -159,7 +173,8 @@ class HomePage:
 
     def open_menu(self):
         if self.menu_panel.isHidden():
-            pos = self.menu_btn.mapToGlobal(QPoint((self.menu_btn.width()-self.MENU_PANEL_WIDTH), self.menu_btn.height()))
+            print(self.menu_btn.width())
+            pos = self.menu_btn.mapToGlobal(QPoint(-9, -9))
             self.menu_panel.move(pos)
             self.menu_panel.show()
         else:
@@ -194,6 +209,7 @@ class HomePage:
 
         # Create QScrollArea for scrolling weather details
         scroll_area = QScrollArea()
+        scroll_area.setStyleSheet("border: none")
         scroll_area.setWidgetResizable(True)  # Allow scrollable content to resize
 
         temp_kelvin = data['main']['temp']
@@ -230,7 +246,7 @@ class HomePage:
             humidity_label, wind_speed_label, pressure_label,
             cloudiness_label, visibility_label, sunrise_label, sunset_label
         ]:
-            label.setFont(QFont("Arial", 15))
+            label.setFont(QFont("Arial", 25))
             label.setAlignment(Qt.AlignLeft)
 
         # Organize widgets into layouts

@@ -1,61 +1,39 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QMenu, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QLineEdit, QVBoxLayout, QWidget, QLabel
 
 
-class MainWindow(QMainWindow):
+class MyWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        # Set up the main window
-        self.setWindowTitle('Button Click to Show Menu')
-        self.setGeometry(100, 100, 400, 300)
+        # Set up the UI components
+        self.setWindowTitle("PyQt5 Placeholder and Enter Example")
+        self.setGeometry(100, 100, 300, 200)
 
-        # Create a central widget and layout
-        central_widget = QWidget(self)
-        layout = QVBoxLayout(central_widget)
+        self.layout = QVBoxLayout()
 
-        # Create a button
-        button = QPushButton('Click Me to Show Menu', self)
+        self.label = QLabel("Type something and press Enter:")
+        self.layout.addWidget(self.label)
 
-        # Add the button to the layout
-        layout.addWidget(button)
+        self.input_field = QLineEdit()
+        self.input_field.setPlaceholderText("Enter your text here...")  # Add placeholder
+        self.layout.addWidget(self.input_field)
 
-        # Connect the button click event to show the menu
-        button.clicked.connect(self.show_menu)
+        # Connect Enter key to the method
+        self.input_field.returnPressed.connect(self.on_enter_pressed)
 
-        # Set the central widget
-        self.setCentralWidget(central_widget)
+        self.setLayout(self.layout)
 
-    def show_menu(self):
-        # Create a QMenu
-        menu = QMenu(self)
-
-        # Add actions to the menu
-        action1 = menu.addAction('Open')
-        action2 = menu.addAction('Save')
-        action3 = menu.addAction('Exit')
-
-        # Connect the actions to corresponding methods
-        action1.triggered.connect(self.open_file)
-        action2.triggered.connect(self.save_file)
-        action3.triggered.connect(self.close)
-
-        # Show the menu at the position of the button
-        menu.exec_(self.mapToGlobal(self.sender().pos()))
-
-    def open_file(self):
-        print("Open selected")
-
-    def save_file(self):
-        print("Save selected")
+    def on_enter_pressed(self):
+        """This method is executed when the Enter key is pressed."""
+        text = self.input_field.text()
+        self.label.setText(f"You entered: {text}")
+        self.input_field.clear()  # Optional: Clear the input field after Enter
 
 
-# Create the application
-app = QApplication(sys.argv)
-
-# Create the main window
-window = MainWindow()
-window.show()
-
-# Run the application
-sys.exit(app.exec_())
+# Main Application Execution
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MyWindow()
+    window.show()
+    sys.exit(app.exec_())

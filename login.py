@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QLineEdit
+from PyQt5.QtWidgets import QWidget, QPushButton, \
+    QVBoxLayout, QLabel, QLineEdit
 from PyQt5.QtCore import Qt
 import sqlite3 as sql
 import bcrypt
@@ -45,13 +46,16 @@ class LoginWindow:
         """)
         self.name_input.setFixedHeight(50)  # Standardize input height
         self.name_input.setFixedWidth(300)  # Standardize input width
+        self.name_input.returnPressed.connect(self.proceed_to_home_page)
         layout.addWidget(self.name_input, alignment=Qt.AlignCenter)
+
 
         layout.addSpacing(5)
 
         # Create and configure the password input
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Enter your password")
+        self.password_input.returnPressed.connect(self.proceed_to_home_page)
         self.password_input.setStyleSheet("""
             QLineEdit {
                 border-color: none;

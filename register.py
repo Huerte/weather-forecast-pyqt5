@@ -28,6 +28,7 @@ class RegisterWindow:
 
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("Enter your name")
+        self.name_input.returnPressed.connect(self.proceed_to_home_page)
         self.name_input.setStyleSheet("""
             QLineEdit {
                 border-color: none;
@@ -46,6 +47,7 @@ class RegisterWindow:
 
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Enter your password")
+        self.password_input.returnPressed.connect(self.proceed_to_home_page)
         self.password_input.setStyleSheet("""
             QLineEdit {
                 border-color: none;
@@ -64,6 +66,7 @@ class RegisterWindow:
 
         self.password2_input = QLineEdit()
         self.password2_input.setPlaceholderText("Verify your password")
+        self.password2_input.returnPressed.connect(self.proceed_to_home_page)
         self.password2_input.setStyleSheet("""
             QLineEdit {
                 border-color: none;  /* Border color */
@@ -145,7 +148,7 @@ class RegisterWindow:
             conn.commit()
             show_info_message(self.window, "Hoy!", "User account\nsuccessfully created!")
             self.clear_input_fields()
-            self.stack_widget.setCurrentIndex(0)
+            self.stack_widget.setCurrentIndex(0) #Mobalik ini sa login page
         except sql.IntegrityError as e:
             if "UNIQUE constraint failed" in str(e):
                 show_error_message(self.window, "Kausik naunhan nakaw!", "Username already exists!")
