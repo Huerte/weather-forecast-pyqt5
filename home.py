@@ -1,7 +1,7 @@
 import requests
 from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, \
     QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget, \
-    QFrame, QScrollArea
+    QFrame, QScrollArea, QSizePolicy
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPoint, QSize
 from PyQt5.QtGui import QIcon, QFont, QPixmap
 import time
@@ -160,10 +160,11 @@ class HomePage:
         self.main_layout.addWidget(self.city_label)
 
         self.result_label = QLabel("Weather data will be displayed here.")
-        self.result_label.setStyleSheet("color: white;")
+        self.result_label.setStyleSheet("color: white; font-size: 15px")
         self.main_layout.addWidget(self.result_label, alignment=Qt.AlignCenter | Qt.AlignTop)
 
         self.home_page.setLayout(self.main_layout)
+
         return self.home_page
 
     def display_settings(self):
@@ -290,6 +291,7 @@ class HomePage:
 
         # Create QScrollArea for scrolling weather details
         self.scroll_area = QScrollArea()
+        self.scroll_area.setMaximumWidth(1000)
         self.scroll_area.setStyleSheet("border: none")
         self.scroll_area.setWidgetResizable(True)  # Allow scrollable content to resize
 
