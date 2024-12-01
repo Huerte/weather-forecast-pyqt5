@@ -116,12 +116,13 @@ class LoginWindow:
         cursor = conn.cursor()
 
         try:
-            cursor.execute('SELECT password FROM users WHERE username = ?', (username,))
-            user = cursor.fetchone()
+            cursor.execute('SELECT username, password FROM users')
+            users = cursor.fetchall()
 
-            if user:
-                stored_hashed_password = user[0]
-                if bcrypt.checkpw(password.encode('utf-8'), stored_hashed_password.encode('utf-8')):
+            stored_password = self.linear_search(users, username)
+
+            if stored_password:
+                if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
                     print(f"Welcome back, {username}!")
                     self.stack_widget.setCurrentIndex(2)
                     return True
@@ -133,6 +134,7 @@ class LoginWindow:
                 show_error_message(self.window, "Account does not exists!", "Invalid username or password")
                 self.clear_input_fields()
                 return False
+
         except Exception as e:
             print(f"{e}")
             return False
@@ -147,4 +149,9 @@ class LoginWindow:
     def proceed_to_register_page(self):
         self.stack_widget.setCurrentIndex(1)
 
-    
+    @staticmethod
+    def linear_search(arr, username):
+        for (name, password) in arr:
+            if name == username:
+                return password
+        return None

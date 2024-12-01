@@ -1,9 +1,10 @@
+from io import BytesIO
 import requests
 from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, \
     QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget, \
-    QFrame, QScrollArea
+    QFrame, QScrollArea, QDialog, QGridLayout
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPoint, QSize
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtGui import QIcon, QFont, QPixmap, QMovie
 from requests.exceptions import ConnectionError, Timeout, RequestException
 
 
@@ -39,6 +40,42 @@ class WeatherThread(QThread):
             self.error_occurred.emit(f"An error occurred: {str(e)}")
 
 
+class LoadingOverlay(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+        self.setModal(True)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setFixedSize(parent.size())
+
+        # Transparent background with centered layout
+        main_layout = QVBoxLayout(self)
+        main_layout.setAlignment(Qt.AlignCenter)
+        main_layout.setContentsMargins(0, 0, 0, 0)  # Remove any margins
+
+        # Loading animation
+        self.loading_label = QLabel()
+        self.loading_label.setAttribute(Qt.WA_TranslucentBackground)
+        self.loading_label.setStyleSheet("background: transparent;")
+        movie = QMovie("assets/animation/loading.gif")
+        self.loading_label.setMovie(movie)
+        movie.start()
+
+        # Add label to the layout
+        loading_wrapper = QWidget()
+        loading_wrapper.setAttribute(Qt.WA_TranslucentBackground)
+        loading_layout = QVBoxLayout(loading_wrapper)
+        loading_layout.setAlignment(Qt.AlignCenter)
+        loading_layout.addWidget(self.loading_label)
+
+        main_layout.addWidget(loading_wrapper)
+
+    def resizeEvent(self, event):
+        """Ensure the overlay stays centered when resized."""
+        self.setFixedSize(self.parent().size())
+        super().resizeEvent(event)
+
+
 class HomePage:
     def __init__(self, stack_widget: QStackedWidget):
         self.home_stack_widget = None
@@ -57,6 +94,8 @@ class HomePage:
         self.home_page = QWidget()
         self.main_layout = QVBoxLayout()
         self.main_layout.setContentsMargins(10, 0, 10, 0)
+
+        self.loading_overlay = LoadingOverlay(self.home_page)
 
         top_layout = QHBoxLayout()
         top_layout.setContentsMargins(0, 0, 0, 0)
@@ -275,7 +314,7 @@ class HomePage:
         if not city:
             self.result_label.setText("Please enter a city.")
             return
-
+        self.loading_overlay.show()
         self.weather_thread = WeatherThread(city)
         self.weather_thread.data_ready.connect(self.display_weather)
         self.weather_thread.error_occurred.connect(self.display_error)
@@ -290,7 +329,7 @@ class HomePage:
 
         # Create QScrollArea for scrolling weather details
         self.scroll_area = QScrollArea()
-        self.scroll_area.setMaximumWidth(1000)
+        self.scroll_area.setMaximumWidth(800)
         self.scroll_area.setStyleSheet("border: none")
         self.scroll_area.setWidgetResizable(True)  # Allow scrollable content to resize
 
@@ -302,8 +341,12 @@ class HomePage:
         wind_speed = data['wind']['speed']
         pressure = data['main']['pressure']
         cloudiness = data['clouds']['all']
+        icon_code = data['weather'][0].get('icon', '')
+        icon_url = f"http://openweathermap.org/img/wn/{icon_code}@2x.png"
 
         weather_layout = QHBoxLayout()
+        weather_layout.setStretch(0, 1)  # Left section
+        weather_layout.setStretch(1, 1)  # Right section
 
         # Create widgets for each data point
         left_section = QWidget()
@@ -313,31 +356,59 @@ class HomePage:
         city_label = QLabel(self.search_input.text().title())
         city_label.setFont(QFont("Arial", 45, QFont.Bold))
         city_label.setStyleSheet("margin: 0px; align-text: right;")
-        left_layout.addWidget(city_label, alignment=Qt.AlignRight)
+        left_layout.addWidget(city_label, alignment=Qt.AlignLeft)
 
-        left_lower_section = QWidget()
-        left_lower_layout = QVBoxLayout()
-        left_lower_layout.setContentsMargins(0, 20, 0, 0)
+        lower_section = QWidget()
+        lower_layout = QHBoxLayout()
+
+        right_lower_section = QWidget()
+        right_lower_layout = QVBoxLayout()
+        right_lower_layout.setContentsMargins(0, 20, 0, 0)
 
         temp_label = QLabel(f"{temp_celsius:.2f} °C")
         temp_label_def = QLabel(f"Temperature")
         temp_label.setStyleSheet("font-size: 40px; margin: 0px;")
         temp_label_def.setStyleSheet("font-size: 18px; color: gray; margin: 0px;")
 
-        left_lower_layout.addWidget(temp_label)
-        left_lower_layout.addWidget(temp_label_def)
+        right_lower_layout.addWidget(temp_label)
+        right_lower_layout.addWidget(temp_label_def)
 
-        left_lower_section.setLayout(left_lower_layout)
         feels_like_label = QLabel(f"{feels_like_celsius:.2f} °C")
         feels_like_label_def = QLabel(f"Feels Like")
         feels_like_label.setStyleSheet("font-size: 35px; margin: 0px;")
         feels_like_label_def.setStyleSheet("font-size: 15px; color: gray; margin: 0px;")
 
-        left_lower_layout.addWidget(feels_like_label)
-        left_lower_layout.addWidget(feels_like_label_def)
+        right_lower_layout.addWidget(feels_like_label)
+        right_lower_layout.addWidget(feels_like_label_def)
 
-        left_layout.addWidget(left_lower_section, alignment=Qt.AlignRight)
+        right_lower_section.setLayout(right_lower_layout)
 
+        left_lower_section = QWidget()
+        left_lower_layout = QVBoxLayout()
+        try:
+            icon_response = requests.get(icon_url)
+            icon_response.raise_for_status()  # Ensure successful response
+            icon_data = BytesIO(icon_response.content)  # Load icon data into BytesIO
+            icon_pixmap = QPixmap()
+            icon_pixmap.loadFromData(icon_data.read())  # Load QPixmap from icon data
+
+            # Create a QLabel for the icon
+            icon_label = QLabel()
+            icon_label.setPixmap(icon_pixmap)
+            icon_label.setFixedSize(150, 150)
+            icon_label.setScaledContents(True)
+
+            left_lower_layout.addWidget(icon_label)
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to load weather icon: {e}")
+
+        left_lower_section.setLayout(left_lower_layout)
+
+        lower_layout.addWidget(left_lower_section, alignment=Qt.AlignCenter | Qt.AlignTop)
+        lower_layout.addWidget(right_lower_section, alignment=Qt.AlignRight)
+
+        lower_section.setLayout(lower_layout)
+        left_layout.addWidget(lower_section)
         left_section.setLayout(left_layout)
 
         right_section = QWidget()
@@ -442,6 +513,7 @@ class HomePage:
 
         # Add scroll area to the main layout
         self.main_layout.addWidget(self.scroll_area)
+        self.loading_overlay.hide()
 
     @staticmethod
     def create_separator():
@@ -456,4 +528,5 @@ class HomePage:
         return line
 
     def display_error(self, error_message):
+        self.loading_overlay.hide()
         self.result_label.setText(f"Error: {error_message}")
