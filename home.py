@@ -2,9 +2,11 @@ import requests
 from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, \
     QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget, \
     QFrame, QScrollArea
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPoint, QSize, QEvent
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPoint, QSize
+from PyQt5.QtGui import QIcon, QFont, QPixmap
 import time
+from requests.exceptions import ConnectionError, Timeout, RequestException
+
 
 class WeatherThread(QThread):
     data_ready = pyqtSignal(dict)
@@ -20,14 +22,22 @@ class WeatherThread(QThread):
             API_Key = "369f96624e904f3c1ffeaa66a10828ee"
             url = f"{Base_Url}appid={API_Key}&q={self.city}"
 
-            response = requests.get(url).json()
+            response = requests.get(url, timeout=10).json()  # Set a timeout for safety
             print(response)
+
             if "main" not in response:
                 raise Exception("City not found or invalid API response.")
 
             self.data_ready.emit(response)
+
+        except ConnectionError:
+            self.error_occurred.emit("Network error: Please check your internet connection.")
+        except Timeout:
+            self.error_occurred.emit("Network error: Request timed out.")
+        except RequestException as e:
+            self.error_occurred.emit(f"Network error: {str(e)}")
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(f"An error occurred: {str(e)}")
 
 
 class HomePage:
@@ -67,6 +77,7 @@ class HomePage:
         self.menu_panel = QWidget(self.home_page)
         self.menu_panel.setWindowFlags(Qt.FramelessWindowHint | Qt.Popup)
         self.menu_panel.setGeometry(0, 0, self.MENU_PANEL_WIDTH, self.MENU_PANEL_WIDTH)
+        self.menu_panel.setContentsMargins(0, 0, 0, 0)
 
         # Semi-transparent menu panel
         self.menu_panel.setStyleSheet("background-color: rgba(0, 0, 0, 0.23); border-radius: 5px;")
@@ -160,9 +171,10 @@ class HomePage:
         settings_layout = QVBoxLayout()
 
         exit_settings_btn = QPushButton("Exit")
-        exit_settings_btn.setStyleSheet("background-color: red")
+        exit_settings_btn.setStyleSheet("background-color: red;")
+        exit_settings_btn.setFixedSize(40, 30)
         exit_settings_btn.clicked.connect(lambda: self.home_stack_widget.setCurrentIndex(0))
-        settings_layout.addWidget(exit_settings_btn)
+        settings_layout.addWidget(exit_settings_btn, alignment=Qt.AlignLeft)
 
         settings_layout.addWidget(QLabel("Settings"), alignment=Qt.AlignCenter)
 
@@ -175,11 +187,10 @@ class HomePage:
         username_label = QLabel(username)
         username_label.setStyleSheet("font-size: 15px; color: white; margin: 0px;")
         menu_layout.addWidget(username_label, alignment=Qt.AlignCenter)
-        menu_layout.addWidget(self.create_separator())
         # Settings button
         settings_btn = QPushButton("Settings")
-        settings_btn.setFixedHeight(30)
         settings_btn.setFocusPolicy(Qt.NoFocus)
+        settings_btn.setFixedWidth(self.MENU_PANEL_WIDTH)
         settings_btn.clicked.connect(lambda: self.home_stack_widget.setCurrentIndex(1))
         settings_btn.setStyleSheet('''
                     QPushButton {
@@ -189,7 +200,7 @@ class HomePage:
                         padding: 5px;
                         margin: 0px;
                         font-size: 15px;
-                        background-color: #2d89ef;
+                        background-color: inherent;
                     }
                     QPushButton:hover {
                         background-color: #5ba8f5;
@@ -197,9 +208,11 @@ class HomePage:
                 ''')
         menu_layout.addWidget(settings_btn, alignment=Qt.AlignCenter)
 
+        menu_layout.addWidget(self.create_separator())
+
         logout_btn = QPushButton("Log out")
-        logout_btn.setFixedHeight(30)
         logout_btn.setFocusPolicy(Qt.NoFocus)
+        logout_btn.setFixedWidth(self.MENU_PANEL_WIDTH)
         logout_btn.setStyleSheet('''
                     QPushButton {
                         border: none;
@@ -208,9 +221,9 @@ class HomePage:
                         padding: 5px;
                         margin: 0px;
                         font-size: 15px;
-                        background-color: #f02222;
+                        background-color: inherent;
                     }
-                    QPushButton:hover {.setFocusPolicy(Qt.NoFocus)
+                    QPushButton:hover {
                         background-color: #f78b8b;
                     }
                 ''')
@@ -279,13 +292,36 @@ class HomePage:
         sunrise_time = time.strftime('%H:%M:%S', time.gmtime(data['sys']['sunrise'] + data['timezone']))
         sunset_time = time.strftime('%H:%M:%S', time.gmtime(data['sys']['sunset'] + data['timezone']))
 
+        weather_layout = QVBoxLayout()###############
+
         # Create widgets for each data point
+        left_section = QWidget()
+        left_layout = QVBoxLayout()
+        left_section.setContentsMargins(10, 0, 10, 0)
+
         city_label = QLabel(self.search_input.text().title())
-        city_label.setFont(QFont("Arial", 24, QFont.Bold))
-        city_label.setAlignment(Qt.AlignCenter)
+        city_label.setFont(QFont("Arial", 40, QFont.Bold))
+        left_layout.addWidget(city_label, alignment=Qt.AlignCenter | Qt.AlignBottom)
+
+        left_lower_section = QWidget()
+        left_lower_layout = QHBoxLayout()
+
+        pixmap = QPixmap("assets/icons/rain_cloud.png").scaled(400, 300, aspectRatioMode=Qt.KeepAspectRatio)
+        # Create a QLabel to hold the image
+        image_label = QLabel()
+        image_label.setPixmap(pixmap)
+        pixmap = pixmap
+        # Add the QLabel to the layout
+        left_lower_layout.addWidget(image_label)
 
         temp_label = QLabel(f"Temperature: {temp_celsius:.2f}°C")
         feels_like_label = QLabel(f"Feels Like: {feels_like_celsius:.2f}°C")
+
+        left_lower_section.setLayout(left_lower_layout)
+
+############################################################################
+
+
         description_label = QLabel(f"Description: {description.capitalize()}")
         humidity_label = QLabel(f"Humidity: {humidity}%")
         wind_speed_label = QLabel(f"Wind Speed: {wind_speed} m/s")
@@ -295,17 +331,7 @@ class HomePage:
         sunrise_label = QLabel(f"Sunrise: {sunrise_time}")
         sunset_label = QLabel(f"Sunset: {sunset_time}")
 
-        # Style labels
-        for label in [
-            temp_label, feels_like_label, description_label,
-            humidity_label, wind_speed_label, pressure_label,
-            cloudiness_label, visibility_label, sunrise_label, sunset_label
-        ]:
-            label.setFont(QFont("Arial", 25))
-            label.setAlignment(Qt.AlignLeft)
-
         # Organize widgets into layouts
-        weather_layout = QVBoxLayout()
         weather_layout.addWidget(city_label)
         weather_layout.addWidget(temp_label)
         weather_layout.addWidget(feels_like_label)
@@ -333,9 +359,10 @@ class HomePage:
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Sunken)
+        line.setFixedHeight(1)
         line.setStyleSheet("""
             background-color: gray;
-            margin: 5px 0px;
+            margin: 0px;
         """)
         return line
 
