@@ -23,7 +23,7 @@ class MainWindow:
   def setup_window(self):
     self.main_window = qtw.QMainWindow()
     self.main_window.setWindowTitle("Binoang na Window")
-    self.main_window.setStyleSheet(f"background-color: #131621; color: white")
+    self.main_window.setStyleSheet("background-color: #131621; color: white")
     WIDTH, HEIGHT = 800, 470
     self.main_window.setGeometry(0, 0, WIDTH, HEIGHT)
 

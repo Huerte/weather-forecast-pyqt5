@@ -89,6 +89,7 @@ class HomePage:
         self.weather_thread = None
         self.MENU_PANEL_WIDTH = 200
         self.stack_widget = stack_widget
+        self.current_theme_dark = True
 
     def display(self):
         self.home_page = QWidget()
@@ -209,21 +210,107 @@ class HomePage:
         settings_page = QWidget()
         settings_layout = QVBoxLayout()
 
-        exit_settings_btn = QPushButton("Exit")
-        exit_settings_btn.setStyleSheet("background-color: red;")
+        # Exit button to go back to the home page
+        exit_settings_btn = QPushButton()
+        exit_settings_btn.setIcon(QIcon("assets/icons/back.png"))
+        exit_settings_btn.setIconSize(QSize(20, 20))
+        exit_settings_btn.setFocusPolicy(Qt.NoFocus)
+        exit_settings_btn.setStyleSheet("background-color: #fb1d11;")
         exit_settings_btn.setFixedSize(40, 30)
         exit_settings_btn.clicked.connect(lambda: self.home_stack_widget.setCurrentIndex(0))
         settings_layout.addWidget(exit_settings_btn, alignment=Qt.AlignLeft)
 
-        settings_layout.addWidget(QLabel("Settings"), alignment=Qt.AlignCenter)
+        # Button to change the theme to Light Mode
+        light_mode_btn = QPushButton("Switch to Light Mode")
+        light_mode_btn.setStyleSheet('''
+            QPushButton {
+                font-size: 16px;
+                padding: 10px;
+                background-color: #4CAF50; /* Green */
+                color: white;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #45a049; /* Darker green on hover */
+            }
+        ''')
+        light_mode_btn.clicked.connect(self.switch_theme)  # Connect to light mode change function
+        settings_layout.addWidget(light_mode_btn, alignment=Qt.AlignCenter)
 
         settings_page.setLayout(settings_layout)
         return settings_page
+
+    def switch_theme(self):
+        if self.current_theme_dark:
+            self.switch_to_light_mode()
+        else:
+            self.switch_to_dark_mode()
+        self.current_theme_dark = not self.current_theme_dark
+
+    def switch_to_dark_mode(self):
+        dark_mode_stylesheet = """
+                    QWidget {
+                        background-color: #131621; 
+                        color: white
+                    }
+                    QLineEdit {
+                        border: 1px solid gray;
+                        background-color: #131621;
+                        padding: 5px;
+                        border-radius: 20px;
+                    }
+                    QPushButton {
+                        background-color: #131621; 
+                        color: white
+                        border-radius: 20px;
+                    }
+                    QPushButton:hover {
+                        background-color: #0056b3;
+                    }
+                    QLabel {
+                        color: white
+                    }
+                """
+        self.search_input.setStyleSheet('''QLineEdit {
+            color: white;
+        }''')
+        self.home_page.setStyleSheet(dark_mode_stylesheet)
+
+    def switch_to_light_mode(self):
+        light_mode_stylesheet = """
+            QWidget {
+                background-color: white;
+                color: black;
+            }
+            QLineEdit {
+                border: 1px solid gray;
+                background-color: #f4f4f4;
+                padding: 5px;
+                border-radius: 20px;
+            }
+            QPushButton {
+                background-color: #007BFF;
+                color: white;
+                border-radius: 20px;
+            }
+            QPushButton:hover {
+                background-color: #0056b3;
+            }
+            QLabel {
+                color: black;
+            }
+        """
+        self.search_input.setStyleSheet('''QLineEdit {
+            color: black;
+        }''')
+        self.home_page.setStyleSheet(light_mode_stylesheet)
 
     def display_widgets(self):
         menu_layout = QVBoxLayout()
         # Settings button
         settings_btn = QPushButton("Settings")
+        settings_btn.setIcon(QIcon("assets/icons/settings.png"))
+        settings_btn.setIconSize(QSize(20, 20))
         settings_btn.setFocusPolicy(Qt.NoFocus)
         settings_btn.setFixedWidth(self.MENU_PANEL_WIDTH)
         settings_btn.clicked.connect(lambda: self.home_stack_widget.setCurrentIndex(1))
@@ -246,6 +333,8 @@ class HomePage:
         menu_layout.addWidget(self.create_separator())
 
         logout_btn = QPushButton("Log out")
+        logout_btn.setIcon(QIcon("assets/icons/exit.png"))
+        logout_btn.setIconSize(QSize(20, 20))
         logout_btn.setFocusPolicy(Qt.NoFocus)
         logout_btn.setFixedWidth(self.MENU_PANEL_WIDTH)
         logout_btn.setStyleSheet('''
