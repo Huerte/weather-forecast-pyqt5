@@ -183,10 +183,6 @@ class HomePage:
 
     def display_widgets(self):
         menu_layout = QVBoxLayout()
-        username = "Richard"
-        username_label = QLabel(username)
-        username_label.setStyleSheet("font-size: 15px; color: white; margin: 0px;")
-        menu_layout.addWidget(username_label, alignment=Qt.AlignCenter)
         # Settings button
         settings_btn = QPushButton("Settings")
         settings_btn.setFocusPolicy(Qt.NoFocus)
@@ -247,7 +243,24 @@ class HomePage:
         # Check the user's response
         response = confirmation.exec_()
         if response == QMessageBox.Yes:
+            self.reset_home_widgets()
             self.stack_widget.setCurrentIndex(0)
+
+    def reset_home_widgets(self):
+        # Reset the search input
+        self.search_input.clear()
+
+        # Reset the result label
+        self.result_label.setText("Weather data will be displayed here.")
+
+        # Reset the city label
+        self.city_label.setText("")
+
+        # Remove the scroll area if it exists
+        if hasattr(self, 'scroll_area') and self.scroll_area:
+            self.main_layout.removeWidget(self.scroll_area)
+            self.scroll_area.deleteLater()
+            self.scroll_area = None
 
     def open_menu(self):
         if self.menu_panel.isHidden():
@@ -288,11 +301,8 @@ class HomePage:
         wind_speed = data['wind']['speed']
         pressure = data['main']['pressure']
         cloudiness = data['clouds']['all']
-        visibility_km = data['visibility'] / 1000
-        sunrise_time = time.strftime('%H:%M:%S', time.gmtime(data['sys']['sunrise'] + data['timezone']))
-        sunset_time = time.strftime('%H:%M:%S', time.gmtime(data['sys']['sunset'] + data['timezone']))
 
-        weather_layout = QVBoxLayout()###############
+        weather_layout = QHBoxLayout()
 
         # Create widgets for each data point
         left_section = QWidget()
@@ -300,49 +310,114 @@ class HomePage:
         left_section.setContentsMargins(10, 0, 10, 0)
 
         city_label = QLabel(self.search_input.text().title())
-        city_label.setFont(QFont("Arial", 40, QFont.Bold))
-        left_layout.addWidget(city_label, alignment=Qt.AlignCenter | Qt.AlignBottom)
+        city_label.setFont(QFont("Arial", 45, QFont.Bold))
+        city_label.setStyleSheet("margin: 0px; align-text: right;")
+        left_layout.addWidget(city_label, alignment=Qt.AlignRight)
 
         left_lower_section = QWidget()
-        left_lower_layout = QHBoxLayout()
+        left_lower_layout = QVBoxLayout()
+        left_lower_layout.setContentsMargins(0, 20, 0, 0)
 
-        pixmap = QPixmap("assets/icons/rain_cloud.png").scaled(400, 300, aspectRatioMode=Qt.KeepAspectRatio)
-        # Create a QLabel to hold the image
-        image_label = QLabel()
-        image_label.setPixmap(pixmap)
-        pixmap = pixmap
-        # Add the QLabel to the layout
-        left_lower_layout.addWidget(image_label)
+        temp_label = QLabel(f"{temp_celsius:.2f} °C")
+        temp_label_def = QLabel(f"Temperature")
+        temp_label.setStyleSheet("font-size: 40px; margin: 0px;")
+        temp_label_def.setStyleSheet("font-size: 18px; color: gray; margin: 0px;")
 
-        temp_label = QLabel(f"Temperature: {temp_celsius:.2f}°C")
-        feels_like_label = QLabel(f"Feels Like: {feels_like_celsius:.2f}°C")
+        left_lower_layout.addWidget(temp_label)
+        left_lower_layout.addWidget(temp_label_def)
 
         left_lower_section.setLayout(left_lower_layout)
+        feels_like_label = QLabel(f"{feels_like_celsius:.2f} °C")
+        feels_like_label_def = QLabel(f"Feels Like")
+        feels_like_label.setStyleSheet("font-size: 35px; margin: 0px;")
+        feels_like_label_def.setStyleSheet("font-size: 15px; color: gray; margin: 0px;")
 
-############################################################################
+        left_lower_layout.addWidget(feels_like_label)
+        left_lower_layout.addWidget(feels_like_label_def)
 
+        left_layout.addWidget(left_lower_section, alignment=Qt.AlignRight)
 
-        description_label = QLabel(f"Description: {description.capitalize()}")
-        humidity_label = QLabel(f"Humidity: {humidity}%")
-        wind_speed_label = QLabel(f"Wind Speed: {wind_speed} m/s")
-        pressure_label = QLabel(f"Pressure: {pressure} hPa")
-        cloudiness_label = QLabel(f"Cloudiness: {cloudiness}%")
-        visibility_label = QLabel(f"Visibility: {visibility_km:.2f} km")
-        sunrise_label = QLabel(f"Sunrise: {sunrise_time}")
-        sunset_label = QLabel(f"Sunset: {sunset_time}")
+        left_section.setLayout(left_layout)
 
-        # Organize widgets into layouts
-        weather_layout.addWidget(city_label)
-        weather_layout.addWidget(temp_label)
-        weather_layout.addWidget(feels_like_label)
-        weather_layout.addWidget(description_label)
-        weather_layout.addWidget(humidity_label)
-        weather_layout.addWidget(wind_speed_label)
-        weather_layout.addWidget(pressure_label)
-        weather_layout.addWidget(cloudiness_label)
-        weather_layout.addWidget(visibility_label)
-        weather_layout.addWidget(sunrise_label)
-        weather_layout.addWidget(sunset_label)
+        right_section = QWidget()
+        right_layout = QVBoxLayout()
+
+        wind_section = QWidget()
+        wind_layout = QHBoxLayout()
+
+        humidity_section = QWidget()
+        humidity_layout = QVBoxLayout()
+
+        humidity_label = QLabel("Humidity")
+        humidity_measure = QLabel(f"{humidity}%")
+        humidity_label.setStyleSheet("font-size: 15px; color: gray;")
+        humidity_measure.setStyleSheet("font-size: 30px;")
+
+        humidity_layout.addWidget(humidity_label, alignment=Qt.AlignLeft)
+        humidity_layout.addWidget(humidity_measure, alignment=Qt.AlignCenter)
+        humidity_section.setLayout(humidity_layout)
+        wind_layout.addWidget(humidity_section)
+
+        wind_speed_section = QWidget()
+        wind_speed_layout = QVBoxLayout()
+
+        wind_speed_label = QLabel("Wind Speed")
+        wind_speed_measure = QLabel(f"{wind_speed} m/s")
+        wind_speed_label.setStyleSheet("font-size: 15px; color: gray;")
+        wind_speed_measure.setStyleSheet("font-size: 30px;")
+
+        wind_speed_layout.addWidget(wind_speed_label, alignment=Qt.AlignCenter)
+        wind_speed_layout.addWidget(wind_speed_measure, alignment=Qt.AlignCenter)
+        wind_speed_section.setLayout(wind_speed_layout)
+
+        wind_layout.addWidget(wind_speed_section)
+        wind_section.setLayout(wind_layout)
+
+        pres_cloud_section = QWidget()
+        pres_cloud_layout = QHBoxLayout()
+
+        cloudiness_section = QWidget()
+        cloudiness_layout = QVBoxLayout()
+
+        cloudiness_label = QLabel("Cloudiness")
+        cloudiness_measure = QLabel(f"{cloudiness}%")
+        cloudiness_label.setStyleSheet("font-size: 15px; color: gray;")
+        cloudiness_measure.setStyleSheet("font-size: 30px;")
+
+        cloudiness_layout.addWidget(cloudiness_label)
+        cloudiness_layout.addWidget(cloudiness_measure, alignment=Qt.AlignCenter)
+
+        cloudiness_section.setLayout(cloudiness_layout)
+
+        pressure_section = QWidget()
+        pressure_layout = QVBoxLayout()
+
+        pressure_label = QLabel("Pressure")
+        pressure_measure = QLabel(f"{pressure} hPa")
+        pressure_label.setStyleSheet("font-size: 15px; color: gray;")
+        pressure_measure.setStyleSheet("font-size: 30px;")
+
+        pressure_layout.addWidget(pressure_label)
+        pressure_layout.addWidget(pressure_measure, alignment=Qt.AlignCenter)
+
+        pressure_section.setLayout(pressure_layout)
+
+        pres_cloud_layout.addWidget(pressure_section)
+        pres_cloud_layout.addWidget(cloudiness_section)
+        pres_cloud_section.setLayout(pres_cloud_layout)
+
+        right_layout.addWidget(wind_section)
+        right_layout.addWidget(pres_cloud_section)
+
+        description_label = QLabel(f"{description.capitalize()}")
+        description_label.setContentsMargins(0, 40, 0, 0)
+        description_label.setStyleSheet("font-size: 30px;")
+        right_layout.addWidget(description_label, alignment=Qt.AlignBottom | Qt.AlignCenter)
+
+        right_section.setLayout(right_layout)
+
+        weather_layout.addWidget(left_section, alignment=Qt.AlignLeft | Qt.AlignTop)
+        weather_layout.addWidget(right_section, alignment=Qt.AlignCenter | Qt.AlignTop)
 
         # Create a container widget for scroll content
         scroll_widget = QWidget()

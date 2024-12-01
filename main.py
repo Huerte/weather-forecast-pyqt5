@@ -32,12 +32,11 @@ class MainWindow:
     self.register_page = RegisterWindow(self.stack_widget).display()
     self.home_page = HomePage(self.stack_widget).display()
 
-    self.stack_widget.addWidget(self.home_page)  # index 2
+    # Amo ini an pagkasunod nan mga window, index zero an una mo
     # respawn na page pag run ng program
     self.stack_widget.addWidget(self.login_page)  # index 0
     self.stack_widget.addWidget(self.register_page)  # index 1
-    # Amo ini an pagkasunod nan mga window, index zero an una mo
-
+    self.stack_widget.addWidget(self.home_page)  # index 2
 
     self.main_window.setCentralWidget(self.stack_widget)
 
