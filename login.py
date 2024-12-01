@@ -126,8 +126,8 @@ class LoginWindow:
                     self.stack_widget.setCurrentIndex(2)
                     return True
                 else:
-                    print("Invalid password!")
-                    self.password_input.clear()
+                    show_error_message(self.window, "Account does not exists!", "Invalid username or password")
+                    self.clear_input_fields()
                     return False
             else:
                 show_error_message(self.window, "Account does not exists!", "Invalid username or password")

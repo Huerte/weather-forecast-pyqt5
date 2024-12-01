@@ -1,10 +1,9 @@
 import requests
 from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, \
     QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget, \
-    QFrame, QScrollArea, QSizePolicy
+    QFrame, QScrollArea
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPoint, QSize
-from PyQt5.QtGui import QIcon, QFont, QPixmap
-import time
+from PyQt5.QtGui import QIcon, QFont
 from requests.exceptions import ConnectionError, Timeout, RequestException
 
 
@@ -348,6 +347,7 @@ class HomePage:
         wind_layout = QHBoxLayout()
 
         humidity_section = QWidget()
+        humidity_section.setMinimumWidth(150)
         humidity_layout = QVBoxLayout()
 
         humidity_label = QLabel("Humidity")
@@ -356,11 +356,12 @@ class HomePage:
         humidity_measure.setStyleSheet("font-size: 30px;")
 
         humidity_layout.addWidget(humidity_label, alignment=Qt.AlignLeft)
-        humidity_layout.addWidget(humidity_measure, alignment=Qt.AlignCenter)
+        humidity_layout.addWidget(humidity_measure, alignment=Qt.AlignLeft)
         humidity_section.setLayout(humidity_layout)
         wind_layout.addWidget(humidity_section)
 
         wind_speed_section = QWidget()
+        wind_speed_section.setMinimumWidth(150)
         wind_speed_layout = QVBoxLayout()
 
         wind_speed_label = QLabel("Wind Speed")
@@ -368,8 +369,8 @@ class HomePage:
         wind_speed_label.setStyleSheet("font-size: 15px; color: gray;")
         wind_speed_measure.setStyleSheet("font-size: 30px;")
 
-        wind_speed_layout.addWidget(wind_speed_label, alignment=Qt.AlignCenter)
-        wind_speed_layout.addWidget(wind_speed_measure, alignment=Qt.AlignCenter)
+        wind_speed_layout.addWidget(wind_speed_label, alignment=Qt.AlignLeft)
+        wind_speed_layout.addWidget(wind_speed_measure, alignment=Qt.AlignLeft)
         wind_speed_section.setLayout(wind_speed_layout)
 
         wind_layout.addWidget(wind_speed_section)
@@ -379,6 +380,7 @@ class HomePage:
         pres_cloud_layout = QHBoxLayout()
 
         cloudiness_section = QWidget()
+        cloudiness_section.setMinimumWidth(150)
         cloudiness_layout = QVBoxLayout()
 
         cloudiness_label = QLabel("Cloudiness")
@@ -386,12 +388,13 @@ class HomePage:
         cloudiness_label.setStyleSheet("font-size: 15px; color: gray;")
         cloudiness_measure.setStyleSheet("font-size: 30px;")
 
-        cloudiness_layout.addWidget(cloudiness_label)
-        cloudiness_layout.addWidget(cloudiness_measure, alignment=Qt.AlignCenter)
+        cloudiness_layout.addWidget(cloudiness_label, alignment=Qt.AlignLeft)
+        cloudiness_layout.addWidget(cloudiness_measure, alignment=Qt.AlignLeft)
 
         cloudiness_section.setLayout(cloudiness_layout)
 
         pressure_section = QWidget()
+        pressure_section.setMinimumWidth(150)
         pressure_layout = QVBoxLayout()
 
         pressure_label = QLabel("Pressure")
@@ -399,8 +402,8 @@ class HomePage:
         pressure_label.setStyleSheet("font-size: 15px; color: gray;")
         pressure_measure.setStyleSheet("font-size: 30px;")
 
-        pressure_layout.addWidget(pressure_label)
-        pressure_layout.addWidget(pressure_measure, alignment=Qt.AlignCenter)
+        pressure_layout.addWidget(pressure_label, alignment=Qt.AlignLeft)
+        pressure_layout.addWidget(pressure_measure, alignment=Qt.AlignLeft)
 
         pressure_section.setLayout(pressure_layout)
 
@@ -411,10 +414,19 @@ class HomePage:
         right_layout.addWidget(wind_section)
         right_layout.addWidget(pres_cloud_section)
 
+        description_section = QWidget()
+        description_layout = QVBoxLayout()
+        description_layout.setContentsMargins(0, 20, 0, 0)
+
+        description_def = QLabel("Description")
         description_label = QLabel(f"{description.capitalize()}")
-        description_label.setContentsMargins(0, 40, 0, 0)
+        description_def.setStyleSheet("font-size: 15px; color: gray;")
         description_label.setStyleSheet("font-size: 30px;")
-        right_layout.addWidget(description_label, alignment=Qt.AlignBottom | Qt.AlignCenter)
+        description_layout.addWidget(description_def)
+        description_layout.addWidget(description_label)
+        description_section.setLayout(description_layout)
+
+        right_layout.addWidget(description_section, alignment=Qt.AlignBottom | Qt.AlignCenter)
 
         right_section.setLayout(right_layout)
 
