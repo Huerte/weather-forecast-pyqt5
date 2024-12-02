@@ -2,7 +2,7 @@ from io import BytesIO
 import requests
 from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, \
     QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget, \
-    QFrame, QScrollArea, QDialog, QGridLayout
+    QFrame, QScrollArea, QDialog
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPoint, QSize
 from PyQt5.QtGui import QIcon, QFont, QPixmap, QMovie
 from requests.exceptions import ConnectionError, Timeout, RequestException
@@ -18,29 +18,20 @@ class GeocodingThread(QThread):
 
     def run(self):
         try:
-            API_KEY = "eb5d005ec460f2307c7588f40c8f63c5"  # Replace with your OpenCage API key
+            API_KEY = "f890f96180e15e4f90305dfc14fe87c0"  # Replace with your OpenCage API key
             Base_Url = "http://api.positionstack.com/v1/forward"
 
             # Construct the URL using the city name
-            url = f"{Base_Url}?q={self.city_name}&key={API_KEY}"
+            url = f"{Base_Url}?access_key={API_KEY}&query={self.city_name}"
 
             # Make the API request
             response = requests.get(url, timeout=10).json()
-            print(response)
 
-            # Check if the API response contains valid results
-            if response['status']['code'] == 200 and response['results']:
-                latitude = response['results'][0]['geometry']['lat']
-                longitude = response['results'][0]['geometry']['lng']
-                city = None
-                for component in response['data'][0]['locality']:
-                    if component:
-                        city = component
-                        break
-                if not city:
-                    city = response['data'][0]['locality']
+            if 'data' in response and response['data']:
+                latitude = response['data'][0]['latitude']
+                longitude = response['data'][0]['longitude']
+                city = response['data'][0]['name']
 
-                # Emit the city, latitude, and longitude data
                 self.data_ready.emit({"city": city, "latitude": latitude, "longitude": longitude})
             else:
                 raise Exception("City not found or invalid API response.")
@@ -53,6 +44,7 @@ class GeocodingThread(QThread):
             self.error_occurred.emit(f"Network error: {str(e)}")
         except Exception as e:
             self.error_occurred.emit(f"An error occurred: {str(e)}")
+
 
 class WeatherThread(QThread):
     data_ready = pyqtSignal(dict)
@@ -74,7 +66,6 @@ class WeatherThread(QThread):
 
             # Make the API request
             response = requests.get(url, timeout=10).json()
-            print(response)
 
             if "main" not in response:
                 raise Exception("City not found or invalid API response.")
@@ -89,6 +80,7 @@ class WeatherThread(QThread):
             self.error_occurred.emit(f"Network error: {str(e)}")
         except Exception as e:
             self.error_occurred.emit(f"An error occurred: {str(e)}")
+
 
 class LoadingOverlay(QDialog):
     def __init__(self, parent=None):
@@ -128,9 +120,10 @@ class LoadingOverlay(QDialog):
 
 class HomePage:
     def __init__(self, stack_widget: QStackedWidget):
+        self.thread = None
+        self.loading_overlay = None
+        self.scroll_area = None
         self.city_name = None
-        self.longitude = None
-        self.latitude = None
         self.home_stack_widget = None
         self.home_page = None
         self.menu_btn = None
@@ -333,7 +326,7 @@ class HomePage:
     def switch_to_light_mode(self):
         light_mode_stylesheet = """
             QWidget {
-                background-color: white;
+                background-color: #b5c5c8;
                 color: black;
             }
             QLineEdit {
@@ -344,7 +337,7 @@ class HomePage:
             }
             QPushButton {
                 background-color: #007BFF;
-                color: white;
+                color: #b5c5c8;
             }
             QPushButton:hover {
                 background-color: #0056b3;
@@ -458,23 +451,26 @@ class HomePage:
             self.result_label.setText("Please enter a city.")
             return
         self.loading_overlay.show()
+        self.fetch_geocoding_data(city)
 
 ###################################################################################################
-        geocoding_thread = GeocodingThread(city)
+    def fetch_geocoding_data(self, city):  # Example city, you can change it
+        self.thread = GeocodingThread(city)
+        self.thread.data_ready.connect(self.handle_data_ready)
+        self.thread.error_occurred.connect(self.display_error)
+        self.thread.start()
 
-        geocoding_thread.data_ready.connect(lambda: self.handle_geocode_data())
-        geocoding_thread.error_occurred.connect(self.display_error)
+    def handle_data_ready(self, data):
+        latitude = data['latitude']
+        longitude = data['longitude']
+        self.city_name = data['city']
+        self.fetch_weather_data(latitude, longitude)
 
-        self.weather_thread = WeatherThread(self.latitude, self.longitude)
+    def fetch_weather_data(self, latitude, longitude):
+        self.weather_thread = WeatherThread(latitude, longitude)
         self.weather_thread.data_ready.connect(self.display_weather)
         self.weather_thread.error_occurred.connect(self.display_error)
         self.weather_thread.start()
-
-    def handle_geocode_data(self, data):
-        self.latitude = data.get("latitude")
-        self.longitude = data.get("longitude")
-        self.city_name = data.get("city")
-        print(self.city_name + "hello")
     
     def display_weather(self, data):
         self.result_label.setText("")
@@ -485,7 +481,6 @@ class HomePage:
 
         # Create QScrollArea for scrolling weather details
         self.scroll_area = QScrollArea()
-        self.scroll_area.setMaximumWidth(1000)
         self.scroll_area.setStyleSheet("border: none")
         self.scroll_area.setWidgetResizable(True)  # Allow scrollable content to resize
 
@@ -686,3 +681,4 @@ class HomePage:
     def display_error(self, error_message):
         self.loading_overlay.hide()
         self.result_label.setText(f"Error: {error_message}")
+
