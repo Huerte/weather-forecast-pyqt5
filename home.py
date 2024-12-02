@@ -8,21 +8,72 @@ from PyQt5.QtGui import QIcon, QFont, QPixmap, QMovie
 from requests.exceptions import ConnectionError, Timeout, RequestException
 
 
+class GeocodingThread(QThread):
+    data_ready = pyqtSignal(dict)  # Signal to emit the response data
+    error_occurred = pyqtSignal(str)  # Signal to emit error messages
+
+    def __init__(self, city_name):
+        super().__init__()
+        self.city_name = city_name  # The city name for geocoding
+
+    def run(self):
+        try:
+            API_KEY = "eb5d005ec460f2307c7588f40c8f63c5"  # Replace with your OpenCage API key
+            Base_Url = "http://api.positionstack.com/v1/forward"
+
+            # Construct the URL using the city name
+            url = f"{Base_Url}?q={self.city_name}&key={API_KEY}"
+
+            # Make the API request
+            response = requests.get(url, timeout=10).json()
+            print(response)
+
+            # Check if the API response contains valid results
+            if response['status']['code'] == 200 and response['results']:
+                latitude = response['results'][0]['geometry']['lat']
+                longitude = response['results'][0]['geometry']['lng']
+                city = None
+                for component in response['data'][0]['locality']:
+                    if component:
+                        city = component
+                        break
+                if not city:
+                    city = response['data'][0]['locality']
+
+                # Emit the city, latitude, and longitude data
+                self.data_ready.emit({"city": city, "latitude": latitude, "longitude": longitude})
+            else:
+                raise Exception("City not found or invalid API response.")
+
+        except requests.exceptions.ConnectionError:
+            self.error_occurred.emit("Network error: Please check your internet connection.")
+        except requests.exceptions.Timeout:
+            self.error_occurred.emit("Network error: Request timed out.")
+        except requests.exceptions.RequestException as e:
+            self.error_occurred.emit(f"Network error: {str(e)}")
+        except Exception as e:
+            self.error_occurred.emit(f"An error occurred: {str(e)}")
+
 class WeatherThread(QThread):
     data_ready = pyqtSignal(dict)
     error_occurred = pyqtSignal(str)
 
-    def __init__(self, city):
+    def __init__(self, lat, lon):
         super().__init__()
-        self.city = city
+        #self.city = city
+        self.lat = lat
+        self.lon = lon
 
     def run(self):
         try:
             Base_Url = "https://api.openweathermap.org/data/2.5/weather?"
             API_Key = "369f96624e904f3c1ffeaa66a10828ee"
-            url = f"{Base_Url}appid={API_Key}&q={self.city}"
 
-            response = requests.get(url, timeout=10).json()  # Set a timeout for safety
+            # Construct the URL using latitude and longitude
+            url = f"{Base_Url}lat={self.lat}&lon={self.lon}&appid={API_Key}&units=metric"
+
+            # Make the API request
+            response = requests.get(url, timeout=10).json()
             print(response)
 
             if "main" not in response:
@@ -38,7 +89,6 @@ class WeatherThread(QThread):
             self.error_occurred.emit(f"Network error: {str(e)}")
         except Exception as e:
             self.error_occurred.emit(f"An error occurred: {str(e)}")
-
 
 class LoadingOverlay(QDialog):
     def __init__(self, parent=None):
@@ -78,6 +128,9 @@ class LoadingOverlay(QDialog):
 
 class HomePage:
     def __init__(self, stack_widget: QStackedWidget):
+        self.city_name = None
+        self.longitude = None
+        self.latitude = None
         self.home_stack_widget = None
         self.home_page = None
         self.menu_btn = None
@@ -221,7 +274,7 @@ class HomePage:
         settings_layout.addWidget(exit_settings_btn, alignment=Qt.AlignLeft)
 
         # Button to change the theme to Light Mode
-        light_mode_btn = QPushButton("Switch to Light Mode")
+        light_mode_btn = QPushButton("Switch Theme")
         light_mode_btn.setStyleSheet('''
             QPushButton {
                 font-size: 16px;
@@ -274,6 +327,7 @@ class HomePage:
         self.search_input.setStyleSheet('''QLineEdit {
             color: white;
         }''')
+        self.result_label.setStyleSheet("color: white; font-size: 15px;")
         self.home_page.setStyleSheet(dark_mode_stylesheet)
 
     def switch_to_light_mode(self):
@@ -302,6 +356,7 @@ class HomePage:
         self.search_input.setStyleSheet('''QLineEdit {
             color: black;
         }''')
+        self.result_label.setStyleSheet("color: black; font-size: 15px;")
         self.home_page.setStyleSheet(light_mode_stylesheet)
 
     def display_widgets(self):
@@ -403,11 +458,24 @@ class HomePage:
             self.result_label.setText("Please enter a city.")
             return
         self.loading_overlay.show()
-        self.weather_thread = WeatherThread(city)
+
+###################################################################################################
+        geocoding_thread = GeocodingThread(city)
+
+        geocoding_thread.data_ready.connect(lambda: self.handle_geocode_data())
+        geocoding_thread.error_occurred.connect(self.display_error)
+
+        self.weather_thread = WeatherThread(self.latitude, self.longitude)
         self.weather_thread.data_ready.connect(self.display_weather)
         self.weather_thread.error_occurred.connect(self.display_error)
         self.weather_thread.start()
 
+    def handle_geocode_data(self, data):
+        self.latitude = data.get("latitude")
+        self.longitude = data.get("longitude")
+        self.city_name = data.get("city")
+        print(self.city_name + "hello")
+    
     def display_weather(self, data):
         self.result_label.setText("")
         if hasattr(self, 'scroll_area') and self.scroll_area:
@@ -417,13 +485,13 @@ class HomePage:
 
         # Create QScrollArea for scrolling weather details
         self.scroll_area = QScrollArea()
-        self.scroll_area.setMaximumWidth(800)
+        self.scroll_area.setMaximumWidth(1000)
         self.scroll_area.setStyleSheet("border: none")
         self.scroll_area.setWidgetResizable(True)  # Allow scrollable content to resize
 
         temp_kelvin = data['main']['temp']
-        temp_celsius = temp_kelvin - 273.15
-        feels_like_celsius = data['main']['feels_like'] - 273.15
+        temp_celsius = temp_kelvin
+        feels_like_celsius = data['main']['feels_like']
         description = data['weather'][0]['description']
         humidity = data['main']['humidity']
         wind_speed = data['wind']['speed']
@@ -441,7 +509,7 @@ class HomePage:
         left_layout = QVBoxLayout()
         left_section.setContentsMargins(10, 0, 10, 0)
 
-        city_label = QLabel(self.search_input.text().title())
+        city_label = QLabel(self.city_name)
         city_label.setFont(QFont("Arial", 45, QFont.Bold))
         city_label.setStyleSheet("margin: 0px; align-text: right;")
         left_layout.addWidget(city_label, alignment=Qt.AlignLeft)
