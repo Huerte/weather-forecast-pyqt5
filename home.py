@@ -291,7 +291,6 @@ class HomePage:
             QPushButton {
                 background-color: #007BFF;
                 color: white;
-                border-radius: 20px;
             }
             QPushButton:hover {
                 background-color: #0056b3;
