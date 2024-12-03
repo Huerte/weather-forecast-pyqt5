@@ -24,7 +24,7 @@ class MainWindow:
     self.main_window = qtw.QMainWindow()
     self.main_window.setWindowTitle("Binoang na Window")
     self.main_window.setStyleSheet("background-color: #131621; color: white")
-    WIDTH, HEIGHT = 800, 470
+    WIDTH, HEIGHT = 900, 470
     self.main_window.setGeometry(0, 0, WIDTH, HEIGHT)
 
     self.stack_widget = qtw.QStackedWidget()
@@ -33,10 +33,10 @@ class MainWindow:
     self.home_page = HomePage(self.stack_widget).display()
 
     # Amo ini an pagkasunod nan mga window, index zero an una mo
+    self.stack_widget.addWidget(self.home_page)  # index 2
     # respawn na page pag run ng program
     self.stack_widget.addWidget(self.login_page)  # index 0
     self.stack_widget.addWidget(self.register_page)  # index 1
-    self.stack_widget.addWidget(self.home_page)  # index 2
 
     self.main_window.setCentralWidget(self.stack_widget)
 

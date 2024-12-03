@@ -145,7 +145,7 @@ class HomePage:
         self.loading_overlay = LoadingOverlay(self.home_page)
 
         top_layout = QHBoxLayout()
-        top_layout.setContentsMargins(0, 0, 0, 0)
+        top_layout.setContentsMargins(0, 10, 0, 0)
 
         # Banner (Log Out Section)
         banner = QWidget()
@@ -155,7 +155,7 @@ class HomePage:
         banner_layout.setSpacing(0)
 
         self.menu_btn = QPushButton()
-        self.menu_btn.setIcon(QIcon("assets/icons/menu.png"))
+        self.menu_btn.setIcon(QIcon("assets/icons/menu1.png"))
         self.menu_btn.setIconSize(QSize(30, 30))
         self.menu_btn.clicked.connect(lambda: self.open_menu())
         self.menu_btn.setFocusPolicy(Qt.NoFocus)
@@ -191,46 +191,52 @@ class HomePage:
 
         # Header Page (Search Bar Section)
         header_page = QWidget()
-        header_page.setFixedWidth(300)
+        header_page.setContentsMargins(10, 0, 10, 0)
+        header_page.setStyleSheet('''
+            QWidget {
+                background-color: transparent;
+                border: 2px solid white; 
+                border-radius: 25px;
+            }
+        ''')
+        header_page.setFixedWidth(330)
         header_layout = QHBoxLayout()
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setSpacing(5)
+
+        search_btn = QPushButton()
+        search_btn.setIconSize(QSize(30, 30))
+        search_btn.setFocusPolicy(Qt.NoFocus)
+        search_btn.setStyleSheet('''
+                    QPushButton {
+                        font-size: 15px;
+                        color: white;
+                        border: none;
+                        margin: none;
+                    }
+                    QPushButton:hover {
+                        opacity: 0.8;
+                    }
+                ''')
+        search_btn.setIcon(QIcon("assets/icons/search_icon.png"))
+        search_btn.setFixedSize(40, 30)
+        search_btn.clicked.connect(self.get_weather)
+        header_layout.addWidget(search_btn)
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Enter the city")
         self.search_input.returnPressed.connect(self.get_weather)
         self.search_input.setStyleSheet('''
             QLineEdit {
-                border: 0.5px solid white;
-                color: white;
-                border-radius: 20px;
-                padding: 5px;
+                border: none;
+                padding: 0px 5px;
                 font-size: 15px;
             }
         ''')
         self.search_input.setFixedHeight(40)
         header_layout.addWidget(self.search_input)
 
-        search_btn = QPushButton()
-        search_btn.setIconSize(QSize(20, 20))
-        search_btn.setFocusPolicy(Qt.NoFocus)
-        search_btn.setStyleSheet('''
-            QPushButton {
-                font-size: 15px;
-                border-radius: 20px;
-                background-color: #007BFF;
-                color: white;
-            }
-            QPushButton:hover {
-                background-color: #0080c0;
-            }
-        ''')
-        search_btn.setIcon(QIcon("assets/icons/search_icon.png"))
-        search_btn.setFixedSize(60, 40)
-        search_btn.clicked.connect(self.get_weather)
-        header_layout.addWidget(search_btn)
-
-        header_page.setFixedHeight(60)
+        header_page.setFixedHeight(50)
         header_page.setLayout(header_layout)
         top_layout.addWidget(header_page, alignment=Qt.AlignRight)
 
@@ -243,6 +249,12 @@ class HomePage:
         self.city_label = QLabel()
         self.city_label.setStyleSheet("color: white")
         self.main_layout.addWidget(self.city_label)
+
+        data = self.get_location()
+        city = data['city']
+        coordinates = data['loc'].split(',')
+        self.fetch_weather_data(coordinates[0], coordinates[1])
+        self.city_name = city
 
         self.result_label = QLabel("Weather data will be displayed here.")
         self.result_label.setStyleSheet("color: white; font-size: 15px")
@@ -302,8 +314,7 @@ class HomePage:
                     QLineEdit {
                         border: 1px solid gray;
                         background-color: #131621;
-                        padding: 5px;
-                        border-radius: 20px;
+                        border: none;
                     }
                     QPushButton {
                         background-color: #131621; 
@@ -319,6 +330,8 @@ class HomePage:
                 """
         self.search_input.setStyleSheet('''QLineEdit {
             color: white;
+            border: none;
+            font-size: 15px;
         }''')
         self.result_label.setStyleSheet("color: white; font-size: 15px;")
         self.home_page.setStyleSheet(dark_mode_stylesheet)
@@ -348,6 +361,8 @@ class HomePage:
         """
         self.search_input.setStyleSheet('''QLineEdit {
             color: black;
+            font-size: 15px;
+            border: none;
         }''')
         self.result_label.setStyleSheet("color: black; font-size: 15px;")
         self.home_page.setStyleSheet(light_mode_stylesheet)
@@ -454,7 +469,6 @@ class HomePage:
 
         self.fetch_geocoding_data(city)
 
-###################################################################################################
     def fetch_geocoding_data(self, city):  # Example city, you can change it
         self.thread = GeocodingThread(city)
         self.thread.data_ready.connect(self.handle_data_ready)
@@ -588,7 +602,7 @@ class HomePage:
         wind_speed_layout = QVBoxLayout()
 
         wind_speed_label = QLabel("Wind Speed")
-        wind_speed_measure = QLabel(f"{wind_speed} km/hr")
+        wind_speed_measure = QLabel(f"{wind_speed: .2f} km/h")
         wind_speed_label.setStyleSheet("font-size: 15px; color: gray;")
         wind_speed_measure.setStyleSheet("font-size: 30px;")
 
@@ -666,6 +680,15 @@ class HomePage:
         # Add scroll area to the main layout
         self.main_layout.addWidget(self.scroll_area)
         self.loading_overlay.hide()
+
+    @staticmethod
+    def get_location():
+        response = requests.get("https://ipinfo.io/json")
+        data = response.json()
+        return {
+            "city": data["city"],
+            "loc": data["loc"]
+        }
 
     @staticmethod
     def create_separator():
