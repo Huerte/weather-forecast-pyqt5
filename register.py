@@ -141,9 +141,9 @@ class RegisterWindow:
         cursor.execute('SELECT username, password FROM users')
         users = cursor.fetchall()
 
-        if not self.hash_search(users, username):
-            show_error_message(self.window, "Kausik naunhan nakaw!", "Username already exists!")
-            return
+        #if not self.hash_search(users, username):
+        #    show_error_message(self.window, "Kausik naunhan nakaw!", "1Username already exists!")
+        #    return
 
         # Hash password and decode to store as text in SQLite
         hash_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')

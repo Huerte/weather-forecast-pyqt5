@@ -451,6 +451,7 @@ class HomePage:
             self.result_label.setText("Please enter a city.")
             return
         self.loading_overlay.show()
+
         self.fetch_geocoding_data(city)
 
 ###################################################################################################
@@ -489,7 +490,7 @@ class HomePage:
         feels_like_celsius = data['main']['feels_like']
         description = data['weather'][0]['description']
         humidity = data['main']['humidity']
-        wind_speed = data['wind']['speed']
+        wind_speed = data['wind']['speed'] * 3.6
         pressure = data['main']['pressure']
         cloudiness = data['clouds']['all']
         icon_code = data['weather'][0].get('icon', '')
@@ -587,7 +588,7 @@ class HomePage:
         wind_speed_layout = QVBoxLayout()
 
         wind_speed_label = QLabel("Wind Speed")
-        wind_speed_measure = QLabel(f"{wind_speed} m/s")
+        wind_speed_measure = QLabel(f"{wind_speed} km/hr")
         wind_speed_label.setStyleSheet("font-size: 15px; color: gray;")
         wind_speed_measure.setStyleSheet("font-size: 30px;")
 
