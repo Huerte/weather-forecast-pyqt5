@@ -1,5 +1,7 @@
-from io import BytesIO
+import pycountry
 import requests
+from io import BytesIO
+from datetime import datetime
 from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, \
     QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget, \
     QFrame, QScrollArea, QDialog
@@ -31,8 +33,14 @@ class GeocodingThread(QThread):
                 latitude = response['data'][0]['latitude']
                 longitude = response['data'][0]['longitude']
                 city = response['data'][0]['name']
+                country = response['country']
 
-                self.data_ready.emit({"city": city, "latitude": latitude, "longitude": longitude})
+                self.data_ready.emit({
+                    "city": city,
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "country": country,
+                })
             else:
                 raise Exception("City not found or invalid API response.")
 
@@ -52,7 +60,6 @@ class WeatherThread(QThread):
 
     def __init__(self, lat, lon):
         super().__init__()
-        #self.city = city
         self.lat = lat
         self.lon = lon
 
@@ -93,17 +100,22 @@ class LoadingOverlay(QDialog):
         # Transparent background with centered layout
         main_layout = QVBoxLayout(self)
         main_layout.setAlignment(Qt.AlignCenter)
-        main_layout.setContentsMargins(0, 0, 0, 0)  # Remove any margins
+        main_layout.setContentsMargins(0, 0, 0, 0)
 
         # Loading animation
         self.loading_label = QLabel()
-        self.loading_label.setAttribute(Qt.WA_TranslucentBackground)
-        self.loading_label.setStyleSheet("background: transparent;")
+        self.loading_label.setAttribute(Qt.WA_TranslucentBackground)  # Make the label background transparent
+        # Load the GIF animation
         movie = QMovie("assets/animation/loading.gif")
+        movie.setScaledSize(QSize(75, 75))
         self.loading_label.setMovie(movie)
         movie.start()
+        # Keep reference to the movie to prevent garbage collection
+        self.movie = movie
+        # Optionally, set the parent widget to be transparent too (if needed)
+        self.loading_label.setStyleSheet("background: transparent;")
 
-        # Add label to the layout
+        # Add label to layout
         loading_wrapper = QWidget()
         loading_wrapper.setAttribute(Qt.WA_TranslucentBackground)
         loading_layout = QVBoxLayout(loading_wrapper)
@@ -119,9 +131,10 @@ class LoadingOverlay(QDialog):
 
 
 class HomePage:
-    def __init__(self, stack_widget: QStackedWidget):
+    def __init__(self, stack_widget: QStackedWidget, loading_overlay):
+        self.country = None
         self.thread = None
-        self.loading_overlay = None
+        self.loading_overlay = loading_overlay
         self.scroll_area = None
         self.city_name = None
         self.home_stack_widget = None
@@ -138,11 +151,11 @@ class HomePage:
         self.current_theme_dark = True
 
     def display(self):
+        self.loading_overlay.show()
+
         self.home_page = QWidget()
         self.main_layout = QVBoxLayout()
         self.main_layout.setContentsMargins(10, 0, 10, 0)
-
-        self.loading_overlay = LoadingOverlay(self.home_page)
 
         top_layout = QHBoxLayout()
         top_layout.setContentsMargins(0, 10, 0, 0)
@@ -255,12 +268,15 @@ class HomePage:
         coordinates = data['loc'].split(',')
         self.fetch_weather_data(coordinates[0], coordinates[1])
         self.city_name = city
+        self.country = data['country']
 
         self.result_label = QLabel("Weather data will be displayed here.")
         self.result_label.setStyleSheet("color: white; font-size: 15px")
         self.main_layout.addWidget(self.result_label, alignment=Qt.AlignCenter | Qt.AlignTop)
 
         self.home_page.setLayout(self.main_layout)
+
+        self.loading_overlay.hide()
 
         return self.home_page
 
@@ -465,29 +481,32 @@ class HomePage:
         if not city:
             self.result_label.setText("Please enter a city.")
             return
-        self.loading_overlay.show()
 
         self.fetch_geocoding_data(city)
 
-    def fetch_geocoding_data(self, city):  # Example city, you can change it
+    def fetch_geocoding_data(self, city):
+        self.loading_overlay.show()
         self.thread = GeocodingThread(city)
         self.thread.data_ready.connect(self.handle_data_ready)
-        self.thread.error_occurred.connect(self.display_error)
+        self.thread.error_occurred.connect(lambda error: self.display_error(error))
         self.thread.start()
 
     def handle_data_ready(self, data):
         latitude = data['latitude']
         longitude = data['longitude']
         self.city_name = data['city']
+        self.country = data['country']
         self.fetch_weather_data(latitude, longitude)
 
     def fetch_weather_data(self, latitude, longitude):
+        self.loading_overlay.show()
         self.weather_thread = WeatherThread(latitude, longitude)
         self.weather_thread.data_ready.connect(self.display_weather)
         self.weather_thread.error_occurred.connect(self.display_error)
         self.weather_thread.start()
-    
+
     def display_weather(self, data):
+        self.loading_overlay.hide()
         self.result_label.setText("")
         if hasattr(self, 'scroll_area') and self.scroll_area:
             self.main_layout.removeWidget(self.scroll_area)
@@ -510,19 +529,94 @@ class HomePage:
         icon_code = data['weather'][0].get('icon', '')
         icon_url = f"http://openweathermap.org/img/wn/{icon_code}@2x.png"
 
-        weather_layout = QHBoxLayout()
+        now = datetime.now()
+
+        # Extract the current date and time separately
+        current_day = now.strftime("%d")
+        current_month = now.strftime("%B")
+        current_time = now.strftime("%H:%M %p")
+        current_weekday = now.strftime("%A")
+
+        weather_layout = QVBoxLayout()
         weather_layout.setStretch(0, 1)  # Left section
         weather_layout.setStretch(1, 1)  # Right section
 
         # Create widgets for each data point
-        left_section = QWidget()
-        left_layout = QVBoxLayout()
-        left_section.setContentsMargins(10, 0, 10, 0)
+        top_left_section = QWidget()
+        top_left_layout = QVBoxLayout()
+        top_left_section.setContentsMargins(10, 0, 10, 0)
 
-        city_label = QLabel(self.city_name)
-        city_label.setFont(QFont("Arial", 45, QFont.Bold))
-        city_label.setStyleSheet("margin: 0px; align-text: right;")
-        left_layout.addWidget(city_label, alignment=Qt.AlignLeft)
+        date_label = QLabel(f"Today, {current_day} {current_month}")
+        date_label.setStyleSheet("font-size: 15px;")
+        top_left_layout.addWidget(date_label)
+
+        city_label_widget = QWidget()
+        city_label_layout = QHBoxLayout()
+        city_label_layout.setContentsMargins(0, 0, 0, 0)
+
+        location_icon = QLabel()
+        location_icon.setFixedSize(30, 30)
+        location_icon.setScaledContents(True)
+        location_icon.setContentsMargins(0, 0, 0, 0)
+        pixmap = QPixmap("assets/icons/location.png")
+        location_icon.setPixmap(pixmap)
+        city_label_layout.addWidget(location_icon)
+
+        city_label = QLabel(f"{self.city_name}, {self.country}")
+        city_label.setFont(QFont("Arial", 15))
+        city_label.setStyleSheet("margin: 0px;")
+        city_label_layout.addWidget(city_label, alignment=Qt.AlignLeft)
+
+        city_label_widget.setLayout(city_label_layout)
+        top_left_layout.addWidget(city_label_widget, alignment=Qt.AlignLeft)
+
+        week_day_label = QLabel(current_weekday)
+        week_day_label.setFont(QFont("Arial", 23, QFont.Bold))
+        top_left_layout.addWidget(week_day_label, alignment=Qt.AlignLeft)
+
+        temperature_widget = QWidget()
+        temperature_layout = QHBoxLayout()
+        temperature_layout.setContentsMargins(0, 0, 0, 0)
+
+        temp_widget = QWidget()
+        temp_layout = QVBoxLayout()
+        temp_layout.setContentsMargins(0, 0, 0, 0)
+
+        temp_label = QLabel(f"{temp_celsius:.2f} °C")
+        temp_label.setFont(QFont("Arial", 50, QFont.Bold))
+        temp_layout.addWidget(temp_label, alignment=Qt.AlignLeft)
+
+        current_weather_label = QLabel("Current Weather")
+        current_weather_label.setFont(QFont("Arial", 10, QFont.Bold))
+        temp_layout.addWidget(current_weather_label, alignment=Qt.AlignLeft)
+
+        time_label = QLabel(current_time)
+        time_label.setFont(QFont("Arial", 10, QFont.Bold))
+        temp_layout.addWidget(time_label, alignment=Qt.AlignLeft)
+
+        temp_widget.setLayout(temp_layout)
+        temperature_layout.addWidget(temp_widget, alignment=Qt.AlignLeft)
+
+        feels_like_widget = QWidget()
+        feels_like_layout = QVBoxLayout()
+        feels_like_widget.setContentsMargins(50, 0, 0, 0)
+
+        feels_like_label = QLabel(f"{feels_like_celsius:.2f} °C")
+        feels_like_label.setFont(QFont("Arial", 45))
+        feels_like_layout.addWidget(feels_like_label, alignment=Qt.AlignTop)
+
+        feels_like_label_def = QLabel(f"Feels Like")
+        feels_like_label_def.setFont(QFont("Arial", 12, QFont.Bold))
+        feels_like_layout.addWidget(feels_like_label_def, alignment=Qt.AlignTop)
+
+        feels_like_widget.setLayout(feels_like_layout)
+        temperature_layout.addWidget(feels_like_widget, alignment=Qt.AlignTop)
+
+        temperature_widget.setLayout(temperature_layout)
+
+        top_left_layout.addWidget(temperature_widget, alignment=Qt.AlignLeft)
+
+######################################################################################
 
         lower_section = QWidget()
         lower_layout = QHBoxLayout()
@@ -530,22 +624,6 @@ class HomePage:
         right_lower_section = QWidget()
         right_lower_layout = QVBoxLayout()
         right_lower_layout.setContentsMargins(0, 20, 0, 0)
-
-        temp_label = QLabel(f"{temp_celsius:.2f} °C")
-        temp_label_def = QLabel(f"Temperature")
-        temp_label.setStyleSheet("font-size: 40px; margin: 0px;")
-        temp_label_def.setStyleSheet("font-size: 18px; color: gray; margin: 0px;")
-
-        right_lower_layout.addWidget(temp_label)
-        right_lower_layout.addWidget(temp_label_def)
-
-        feels_like_label = QLabel(f"{feels_like_celsius:.2f} °C")
-        feels_like_label_def = QLabel(f"Feels Like")
-        feels_like_label.setStyleSheet("font-size: 35px; margin: 0px;")
-        feels_like_label_def.setStyleSheet("font-size: 15px; color: gray; margin: 0px;")
-
-        right_lower_layout.addWidget(feels_like_label)
-        right_lower_layout.addWidget(feels_like_label_def)
 
         right_lower_section.setLayout(right_lower_layout)
 
@@ -574,8 +652,8 @@ class HomePage:
         lower_layout.addWidget(right_lower_section, alignment=Qt.AlignRight)
 
         lower_section.setLayout(lower_layout)
-        left_layout.addWidget(lower_section)
-        left_section.setLayout(left_layout)
+        top_left_layout.addWidget(lower_section)
+        top_left_section.setLayout(top_left_layout)
 
         right_section = QWidget()
         right_layout = QVBoxLayout()
@@ -667,7 +745,7 @@ class HomePage:
 
         right_section.setLayout(right_layout)
 
-        weather_layout.addWidget(left_section, alignment=Qt.AlignLeft | Qt.AlignTop)
+        weather_layout.addWidget(top_left_section, alignment=Qt.AlignLeft | Qt.AlignTop)
         weather_layout.addWidget(right_section, alignment=Qt.AlignCenter | Qt.AlignTop)
 
         # Create a container widget for scroll content
@@ -681,13 +759,18 @@ class HomePage:
         self.main_layout.addWidget(self.scroll_area)
         self.loading_overlay.hide()
 
-    @staticmethod
-    def get_location():
+    def get_location(self):
         response = requests.get("https://ipinfo.io/json")
         data = response.json()
+
+        country_code = data["country"]
+        country_name = pycountry.countries.get(alpha_2=country_code).name if country_code else None
+
         return {
             "city": data["city"],
-            "loc": data["loc"]
+            "loc": data["loc"],
+            "country": country_name
+
         }
 
     @staticmethod

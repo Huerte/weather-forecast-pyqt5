@@ -4,21 +4,20 @@ from PyQt5.QtCore import Qt
 import sqlite3 as sql
 import bcrypt
 from message_display import show_error_message
-
+from home import LoadingOverlay
 
 class LoginWindow:
     def __init__(self, stack_widget):
-        self.window = None
+        self.window = self.window = QWidget()
+        self.window.setWindowTitle("Login Page")
+
         self.stack_widget = stack_widget
         self.name_input = ""
         self.password_input = ""
+        self.loading = LoadingOverlay(self.window)
 
     def display(self):
-        # Create the main selfwindow
-        self.window = QWidget()
-        self.window.setWindowTitle("Login Page")
-
-        # Create a vertical layout for the selfwindow
+        # Create a vertical layout for the self window
         layout = QVBoxLayout()
 
         layout.addSpacing(20)
@@ -48,7 +47,6 @@ class LoginWindow:
         self.name_input.setFixedWidth(300)  # Standardize input width
         self.name_input.returnPressed.connect(self.proceed_to_home_page)
         layout.addWidget(self.name_input, alignment=Qt.AlignCenter)
-
 
         layout.addSpacing(5)
 
@@ -124,7 +122,10 @@ class LoginWindow:
             if stored_password:
                 if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
                     print(f"Welcome back, {username}!")
+
+                    #####################################
                     self.stack_widget.setCurrentIndex(2)
+
                     return True
                 else:
                     show_error_message(self.window, "Account does not exists!", "Invalid username or password")
