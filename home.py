@@ -5,88 +5,10 @@ from datetime import datetime
 from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, \
     QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget, \
     QFrame, QScrollArea, QDialog
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPoint, QSize
+from PyQt5.QtCore import Qt, QPoint, QSize
 from PyQt5.QtGui import QIcon, QFont, QPixmap, QMovie
-from requests.exceptions import ConnectionError, Timeout, RequestException
-
-
-class GeocodingThread(QThread):
-    data_ready = pyqtSignal(dict)  # Signal to emit the response data
-    error_occurred = pyqtSignal(str)  # Signal to emit error messages
-
-    def __init__(self, city_name):
-        super().__init__()
-        self.city_name = city_name  # The city name for geocoding
-
-    def run(self):
-        try:
-            API_KEY = "f890f96180e15e4f90305dfc14fe87c0"  # Replace with your OpenCage API key
-            Base_Url = "http://api.positionstack.com/v1/forward"
-
-            # Construct the URL using the city name
-            url = f"{Base_Url}?access_key={API_KEY}&query={self.city_name}"
-
-            # Make the API request
-            response = requests.get(url, timeout=10).json()
-
-            if 'data' in response and response['data']:
-                latitude = response['data'][0]['latitude']
-                longitude = response['data'][0]['longitude']
-                city = response['data'][0]['name']
-                country = response['country']
-
-                self.data_ready.emit({
-                    "city": city,
-                    "latitude": latitude,
-                    "longitude": longitude,
-                    "country": country,
-                })
-            else:
-                raise Exception("City not found or invalid API response.")
-
-        except requests.exceptions.ConnectionError:
-            self.error_occurred.emit("Network error: Please check your internet connection.")
-        except requests.exceptions.Timeout:
-            self.error_occurred.emit("Network error: Request timed out.")
-        except requests.exceptions.RequestException as e:
-            self.error_occurred.emit(f"Network error: {str(e)}")
-        except Exception as e:
-            self.error_occurred.emit(f"An error occurred: {str(e)}")
-
-
-class WeatherThread(QThread):
-    data_ready = pyqtSignal(dict)
-    error_occurred = pyqtSignal(str)
-
-    def __init__(self, lat, lon):
-        super().__init__()
-        self.lat = lat
-        self.lon = lon
-
-    def run(self):
-        try:
-            Base_Url = "https://api.openweathermap.org/data/2.5/weather?"
-            API_Key = "369f96624e904f3c1ffeaa66a10828ee"
-
-            # Construct the URL using latitude and longitude
-            url = f"{Base_Url}lat={self.lat}&lon={self.lon}&appid={API_Key}&units=metric"
-
-            # Make the API request
-            response = requests.get(url, timeout=10).json()
-
-            if "main" not in response:
-                raise Exception("City not found or invalid API response.")
-
-            self.data_ready.emit(response)
-
-        except ConnectionError:
-            self.error_occurred.emit("Network error: Please check your internet connection.")
-        except Timeout:
-            self.error_occurred.emit("Network error: Request timed out.")
-        except RequestException as e:
-            self.error_occurred.emit(f"Network error: {str(e)}")
-        except Exception as e:
-            self.error_occurred.emit(f"An error occurred: {str(e)}")
+from WeatherRequest import WeatherThread
+from LocationRequest import GeocodingThread
 
 
 class LoadingOverlay(QDialog):
@@ -279,6 +201,315 @@ class HomePage:
         self.loading_overlay.hide()
 
         return self.home_page
+
+    def get_weather(self):
+        city = self.search_input.text().title()
+        if not city:
+            self.result_label.setText("Please enter a city.")
+            return
+
+        self.fetch_geocoding_data(city)
+
+    def fetch_geocoding_data(self, city):
+        self.loading_overlay.show()
+        self.thread = GeocodingThread(city)
+        self.thread.data_ready.connect(self.handle_data_ready)
+        self.thread.error_occurred.connect(lambda error: self.display_error(error))
+        self.thread.start()
+
+    def handle_data_ready(self, data):
+        latitude = data['latitude']
+        longitude = data['longitude']
+        self.city_name = data['city']
+        self.country = data['country']
+        self.fetch_weather_data(latitude, longitude)
+
+    def fetch_weather_data(self, latitude, longitude):
+        self.loading_overlay.show()
+        self.weather_thread = WeatherThread(latitude, longitude)
+        self.weather_thread.data_ready.connect(self.display_weather)
+        self.weather_thread.error_occurred.connect(self.display_error)
+        self.weather_thread.start()
+
+    def display_weather(self, data):
+        self.loading_overlay.hide()
+        self.result_label.setText("")
+        if hasattr(self, 'scroll_area') and self.scroll_area:
+            self.main_layout.removeWidget(self.scroll_area)
+            self.scroll_area.deleteLater()
+            self.scroll_area = None
+
+        # Create QScrollArea for scrolling weather details
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setContentsMargins(0, 0, 0, 0)
+        self.scroll_area.setStyleSheet("border: none")
+        self.scroll_area.setWidgetResizable(True)  # Allow scrollable content to resize
+
+        temp_kelvin = data['main']['temp']
+        temp_celsius = temp_kelvin
+        feels_like_celsius = data['main']['feels_like']
+        description = data['weather'][0]['description']
+        humidity = data['main']['humidity']
+        wind_speed = data['wind']['speed'] * 3.6
+        pressure = data['main']['pressure']
+        cloudiness = data['clouds']['all']
+        icon_code = data['weather'][0].get('icon', '')
+        icon_url = f"http://openweathermap.org/img/wn/{icon_code}@2x.png"
+
+        now = datetime.now()
+
+        # Extract the current date and time separately
+        current_day = now.strftime("%d")
+        current_month = now.strftime("%B")
+        current_time = now.strftime("%H:%M %p")
+        current_weekday = now.strftime("%A")
+
+        weather_layout = QVBoxLayout()
+        weather_layout.setContentsMargins(0, 0, 0, 0)
+
+        top_section = QWidget()
+        top_layout = QHBoxLayout()
+        top_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Create widgets for each data point
+        top_left_section = QWidget()
+        top_left_layout = QVBoxLayout()
+        top_left_section.setContentsMargins(10, 0, 10, 0)
+
+        date_label = QLabel(f"Today, {current_day} {current_month}")
+        date_label.setStyleSheet("font-size: 15px;")
+        top_left_layout.addWidget(date_label)
+
+        city_label_widget = QWidget()
+        city_label_layout = QHBoxLayout()
+        city_label_layout.setContentsMargins(0, 0, 0, 0)
+
+        location_icon = QLabel()
+        location_icon.setFixedSize(30, 30)
+        location_icon.setScaledContents(True)
+        location_icon.setContentsMargins(0, 0, 0, 0)
+        pixmap = QPixmap("assets/icons/location.png")
+        location_icon.setPixmap(pixmap)
+        city_label_layout.addWidget(location_icon)
+
+        city_label = QLabel(f"{self.city_name}, {self.country}")
+        city_label.setFont(QFont("Arial", 15))
+        city_label.setStyleSheet("margin: 0px;")
+        city_label_layout.addWidget(city_label, alignment=Qt.AlignLeft)
+
+        city_label_widget.setLayout(city_label_layout)
+        top_left_layout.addWidget(city_label_widget, alignment=Qt.AlignLeft)
+
+        week_day_label = QLabel(current_weekday)
+        week_day_label.setFont(QFont("Arial", 23, QFont.Bold))
+        top_left_layout.addWidget(week_day_label, alignment=Qt.AlignLeft)
+
+        temperature_widget = QWidget()
+        temperature_layout = QHBoxLayout()
+        temperature_layout.setContentsMargins(0, 0, 0, 0)
+
+        temp_widget = QWidget()
+        temp_layout = QVBoxLayout()
+        temp_layout.setContentsMargins(0, 0, 0, 0)
+
+        temp_label = QLabel(f"{temp_celsius:.2f} °C")
+        temp_label.setFont(QFont("Arial", 45, QFont.Bold))
+        temp_layout.addWidget(temp_label, alignment=Qt.AlignLeft)
+
+        current_weather_label = QLabel("Current Weather")
+        current_weather_label.setFont(QFont("Arial", 10, QFont.Bold))
+        temp_layout.addWidget(current_weather_label, alignment=Qt.AlignLeft)
+
+        time_label = QLabel(current_time)
+        time_label.setFont(QFont("Arial", 10, QFont.Bold))
+        temp_layout.addWidget(time_label, alignment=Qt.AlignLeft)
+
+        temp_widget.setLayout(temp_layout)
+        temperature_layout.addWidget(temp_widget, alignment=Qt.AlignLeft)
+
+        feels_like_widget = QWidget()
+        feels_like_layout = QVBoxLayout()
+        feels_like_widget.setContentsMargins(50, 0, 0, 0)
+
+        feels_like_label = QLabel(f"{feels_like_celsius:.2f} °C")
+        feels_like_label.setFont(QFont("Arial", 40))
+        feels_like_layout.addWidget(feels_like_label, alignment=Qt.AlignTop)
+
+        feels_like_label_def = QLabel(f"Feels Like")
+        feels_like_label_def.setFont(QFont("Arial", 12, QFont.Bold))
+        feels_like_layout.addWidget(feels_like_label_def, alignment=Qt.AlignTop)
+
+        feels_like_widget.setLayout(feels_like_layout)
+        temperature_layout.addWidget(feels_like_widget, alignment=Qt.AlignTop)
+
+        temperature_widget.setLayout(temperature_layout)
+
+        top_left_layout.addWidget(temperature_widget, alignment=Qt.AlignLeft)
+
+        top_left_section.setLayout(top_left_layout)
+
+        top_right_section = QWidget()
+        top_right_layout = QVBoxLayout()
+
+        try:
+            icon_response = requests.get(icon_url)
+            icon_response.raise_for_status()  # Ensure successful response
+            icon_data = BytesIO(icon_response.content)  # Load icon data into BytesIO
+            icon_pixmap = QPixmap()
+            icon_pixmap.loadFromData(icon_data.read())  # Load QPixmap from icon data
+
+            # Create a QLabel for the icon
+            icon_label = QLabel()
+            icon_label.setPixmap(icon_pixmap)
+            icon_label.setFixedSize(250, 250)
+            icon_label.setScaledContents(True)
+
+            top_right_layout.addWidget(icon_label)
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to load weather icon: {e}")
+
+        top_right_section.setLayout(top_right_layout)
+
+        top_layout.addWidget(top_left_section)
+        top_layout.addWidget(top_right_section)
+        top_section.setLayout(top_layout)
+
+        lower_section = QWidget()
+        lower_layout = QHBoxLayout()
+        lower_section.setContentsMargins(0, 50, 0, 0)
+
+        humidity_section = QWidget()
+        humidity_layout = QVBoxLayout()
+        humidity_layout.setContentsMargins(30, 0, 30, 0)
+
+        humidity_label = QLabel("Humidity")
+        humidity_icon = QLabel()
+        humidity_icon.setFixedSize(50, 50)
+        humidity_icon.setScaledContents(True)
+        humidity_icon.setContentsMargins(0, 0, 0, 0)
+        humidity_icon_pixmap = QPixmap("assets/icons/humidity.png")
+        humidity_icon.setPixmap(humidity_icon_pixmap)
+        humidity_measure = QLabel(f"{humidity}%")
+        humidity_label.setStyleSheet("font-size: 15px; color: gray;")
+        humidity_measure.setStyleSheet("font-size: 30px;")
+
+        humidity_layout.addWidget(humidity_label, alignment=Qt.AlignTop | Qt.AlignCenter)
+        humidity_layout.addWidget(humidity_icon, alignment=Qt.AlignCenter)
+        humidity_layout.addWidget(humidity_measure, alignment=Qt.AlignCenter)
+        humidity_section.setLayout(humidity_layout)
+
+        wind_speed_section = QWidget()
+        wind_speed_layout = QVBoxLayout()
+        wind_speed_layout.setContentsMargins(30, 0, 30, 0)
+
+        wind_speed_label = QLabel("Wind Speed")
+        wind_icon = QLabel()
+        wind_icon.setFixedSize(50, 50)
+        wind_icon.setScaledContents(True)
+        wind_icon.setContentsMargins(0, 0, 0, 0)
+        wind_icon_pixmap = QPixmap("assets/icons/air.png")
+        wind_icon.setPixmap(wind_icon_pixmap)
+        wind_speed_measure = QLabel(f"{wind_speed: .2f} km/h")
+        wind_speed_label.setStyleSheet("font-size: 15px; color: gray;")
+        wind_speed_measure.setStyleSheet("font-size: 30px;")
+
+        wind_speed_layout.addWidget(wind_speed_label, alignment=Qt.AlignTop | Qt.AlignCenter)
+        wind_speed_layout.addWidget(wind_icon, alignment=Qt.AlignCenter)
+        wind_speed_layout.addWidget(wind_speed_measure, alignment=Qt.AlignCenter)
+        wind_speed_section.setLayout(wind_speed_layout)
+        wind_speed_section.setLayout(wind_speed_layout)
+
+        pressure_section = QWidget()
+        pressure_layout = QVBoxLayout()
+        pressure_layout.setContentsMargins(30, 0, 30, 0)
+
+        pressure_label = QLabel("Pressure")
+        pressure_icon = QLabel()
+        pressure_icon.setFixedSize(50, 50)
+        pressure_icon.setScaledContents(True)
+        pressure_icon.setContentsMargins(0, 0, 0, 0)
+        pressure_icon_pixmap = QPixmap("assets/icons/air pressure.png")
+        pressure_icon.setPixmap(pressure_icon_pixmap)
+        pressure_measure = QLabel(f"{pressure} hPa")
+        pressure_label.setStyleSheet("font-size: 15px; color: gray;")
+        pressure_measure.setStyleSheet("font-size: 30px;")
+
+        pressure_layout.addWidget(pressure_label, alignment=Qt.AlignTop | Qt.AlignCenter)
+        pressure_layout.addWidget(pressure_icon, alignment=Qt.AlignCenter)
+        pressure_layout.addWidget(pressure_measure, alignment=Qt.AlignCenter)
+        pressure_section.setLayout(pressure_layout)
+
+        cloudiness_section = QWidget()
+        cloudiness_layout = QVBoxLayout()
+        cloudiness_layout.setContentsMargins(30, 0, 30, 0)
+
+        cloudiness_label = QLabel("Cloudiness")
+        cloudiness_icon = QLabel()
+        cloudiness_icon.setFixedSize(50, 50)
+        cloudiness_icon.setScaledContents(True)
+        cloudiness_icon.setContentsMargins(0, 0, 0, 0)
+        cloudiness_icon_pixmap = QPixmap("assets/icons/cloud.png")
+        cloudiness_icon.setPixmap(cloudiness_icon_pixmap)
+        cloudiness_measure = QLabel(f"{cloudiness}%")
+        cloudiness_label.setStyleSheet("font-size: 15px; color: gray;")
+        cloudiness_measure.setStyleSheet("font-size: 30px;")
+
+        cloudiness_layout.addWidget(cloudiness_label, alignment=Qt.AlignTop | Qt.AlignCenter)
+        cloudiness_layout.addWidget(cloudiness_icon, alignment=Qt.AlignCenter)
+        cloudiness_layout.addWidget(cloudiness_measure, alignment=Qt.AlignCenter)
+        cloudiness_section.setLayout(cloudiness_layout)
+
+        description_section = QWidget()
+        description_layout = QVBoxLayout()
+        description_layout.setContentsMargins(30, 0, 30, 0)
+
+        description_def = QLabel("Description")
+        null_widget = QLabel()
+        description_label = QLabel(f"{description.capitalize()}")
+        description_def.setStyleSheet("font-size: 15px; color: gray;")
+        description_label.setStyleSheet("font-size: 30px;")
+        description_layout.addWidget(description_def, alignment=Qt.AlignTop | Qt.AlignCenter)
+        description_layout.addWidget(description_label, alignment=Qt.AlignTop | Qt.AlignCenter)
+        description_layout.addWidget(null_widget, alignment=Qt.AlignCenter)
+        description_section.setLayout(description_layout)
+
+        lower_layout.addWidget(humidity_section)
+        lower_layout.addWidget(wind_speed_section)
+        lower_layout.addWidget(pressure_section)
+        lower_layout.addWidget(cloudiness_section)
+        lower_layout.addWidget(description_section)
+        lower_section.setLayout(lower_layout)
+
+        weather_layout.addWidget(top_section, alignment=Qt.AlignCenter)
+        weather_layout.addWidget(lower_section, alignment=Qt.AlignCenter | Qt.AlignTop)
+
+######################################################################################
+
+        scroll_widget = QWidget()
+        scroll_widget.setContentsMargins(0, 0, 0, 0)
+        scroll_widget.setLayout(weather_layout)
+
+        # Add container widget to the scroll area
+        self.scroll_area.setWidget(scroll_widget)
+
+        # Add scroll area to the main layout
+        self.main_layout.addWidget(self.scroll_area)
+        self.loading_overlay.hide()
+
+    @staticmethod
+    def get_location():
+        response = requests.get("https://ipinfo.io/json")
+        data = response.json()
+
+        country_code = data["country"]
+        country_name = pycountry.countries.get(alpha_2=country_code).name if country_code else None
+
+        return {
+            "city": data["city"],
+            "loc": data["loc"],
+            "country": country_name
+
+        }
 
     def display_settings(self):
         settings_page = QWidget()
@@ -476,303 +707,6 @@ class HomePage:
         else:
             self.menu_panel.hide()
 
-    def get_weather(self):
-        city = self.search_input.text().title()
-        if not city:
-            self.result_label.setText("Please enter a city.")
-            return
-
-        self.fetch_geocoding_data(city)
-
-    def fetch_geocoding_data(self, city):
-        self.loading_overlay.show()
-        self.thread = GeocodingThread(city)
-        self.thread.data_ready.connect(self.handle_data_ready)
-        self.thread.error_occurred.connect(lambda error: self.display_error(error))
-        self.thread.start()
-
-    def handle_data_ready(self, data):
-        latitude = data['latitude']
-        longitude = data['longitude']
-        self.city_name = data['city']
-        self.country = data['country']
-        self.fetch_weather_data(latitude, longitude)
-
-    def fetch_weather_data(self, latitude, longitude):
-        self.loading_overlay.show()
-        self.weather_thread = WeatherThread(latitude, longitude)
-        self.weather_thread.data_ready.connect(self.display_weather)
-        self.weather_thread.error_occurred.connect(self.display_error)
-        self.weather_thread.start()
-
-    def display_weather(self, data):
-        self.loading_overlay.hide()
-        self.result_label.setText("")
-        if hasattr(self, 'scroll_area') and self.scroll_area:
-            self.main_layout.removeWidget(self.scroll_area)
-            self.scroll_area.deleteLater()
-            self.scroll_area = None
-
-        # Create QScrollArea for scrolling weather details
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setStyleSheet("border: none")
-        self.scroll_area.setWidgetResizable(True)  # Allow scrollable content to resize
-
-        temp_kelvin = data['main']['temp']
-        temp_celsius = temp_kelvin
-        feels_like_celsius = data['main']['feels_like']
-        description = data['weather'][0]['description']
-        humidity = data['main']['humidity']
-        wind_speed = data['wind']['speed'] * 3.6
-        pressure = data['main']['pressure']
-        cloudiness = data['clouds']['all']
-        icon_code = data['weather'][0].get('icon', '')
-        icon_url = f"http://openweathermap.org/img/wn/{icon_code}@2x.png"
-
-        now = datetime.now()
-
-        # Extract the current date and time separately
-        current_day = now.strftime("%d")
-        current_month = now.strftime("%B")
-        current_time = now.strftime("%H:%M %p")
-        current_weekday = now.strftime("%A")
-
-        weather_layout = QVBoxLayout()
-        weather_layout.setStretch(0, 1)  # Left section
-        weather_layout.setStretch(1, 1)  # Right section
-
-        # Create widgets for each data point
-        top_left_section = QWidget()
-        top_left_layout = QVBoxLayout()
-        top_left_section.setContentsMargins(10, 0, 10, 0)
-
-        date_label = QLabel(f"Today, {current_day} {current_month}")
-        date_label.setStyleSheet("font-size: 15px;")
-        top_left_layout.addWidget(date_label)
-
-        city_label_widget = QWidget()
-        city_label_layout = QHBoxLayout()
-        city_label_layout.setContentsMargins(0, 0, 0, 0)
-
-        location_icon = QLabel()
-        location_icon.setFixedSize(30, 30)
-        location_icon.setScaledContents(True)
-        location_icon.setContentsMargins(0, 0, 0, 0)
-        pixmap = QPixmap("assets/icons/location.png")
-        location_icon.setPixmap(pixmap)
-        city_label_layout.addWidget(location_icon)
-
-        city_label = QLabel(f"{self.city_name}, {self.country}")
-        city_label.setFont(QFont("Arial", 15))
-        city_label.setStyleSheet("margin: 0px;")
-        city_label_layout.addWidget(city_label, alignment=Qt.AlignLeft)
-
-        city_label_widget.setLayout(city_label_layout)
-        top_left_layout.addWidget(city_label_widget, alignment=Qt.AlignLeft)
-
-        week_day_label = QLabel(current_weekday)
-        week_day_label.setFont(QFont("Arial", 23, QFont.Bold))
-        top_left_layout.addWidget(week_day_label, alignment=Qt.AlignLeft)
-
-        temperature_widget = QWidget()
-        temperature_layout = QHBoxLayout()
-        temperature_layout.setContentsMargins(0, 0, 0, 0)
-
-        temp_widget = QWidget()
-        temp_layout = QVBoxLayout()
-        temp_layout.setContentsMargins(0, 0, 0, 0)
-
-        temp_label = QLabel(f"{temp_celsius:.2f} °C")
-        temp_label.setFont(QFont("Arial", 50, QFont.Bold))
-        temp_layout.addWidget(temp_label, alignment=Qt.AlignLeft)
-
-        current_weather_label = QLabel("Current Weather")
-        current_weather_label.setFont(QFont("Arial", 10, QFont.Bold))
-        temp_layout.addWidget(current_weather_label, alignment=Qt.AlignLeft)
-
-        time_label = QLabel(current_time)
-        time_label.setFont(QFont("Arial", 10, QFont.Bold))
-        temp_layout.addWidget(time_label, alignment=Qt.AlignLeft)
-
-        temp_widget.setLayout(temp_layout)
-        temperature_layout.addWidget(temp_widget, alignment=Qt.AlignLeft)
-
-        feels_like_widget = QWidget()
-        feels_like_layout = QVBoxLayout()
-        feels_like_widget.setContentsMargins(50, 0, 0, 0)
-
-        feels_like_label = QLabel(f"{feels_like_celsius:.2f} °C")
-        feels_like_label.setFont(QFont("Arial", 45))
-        feels_like_layout.addWidget(feels_like_label, alignment=Qt.AlignTop)
-
-        feels_like_label_def = QLabel(f"Feels Like")
-        feels_like_label_def.setFont(QFont("Arial", 12, QFont.Bold))
-        feels_like_layout.addWidget(feels_like_label_def, alignment=Qt.AlignTop)
-
-        feels_like_widget.setLayout(feels_like_layout)
-        temperature_layout.addWidget(feels_like_widget, alignment=Qt.AlignTop)
-
-        temperature_widget.setLayout(temperature_layout)
-
-        top_left_layout.addWidget(temperature_widget, alignment=Qt.AlignLeft)
-
-######################################################################################
-
-        lower_section = QWidget()
-        lower_layout = QHBoxLayout()
-
-        right_lower_section = QWidget()
-        right_lower_layout = QVBoxLayout()
-        right_lower_layout.setContentsMargins(0, 20, 0, 0)
-
-        right_lower_section.setLayout(right_lower_layout)
-
-        left_lower_section = QWidget()
-        left_lower_layout = QVBoxLayout()
-        try:
-            icon_response = requests.get(icon_url)
-            icon_response.raise_for_status()  # Ensure successful response
-            icon_data = BytesIO(icon_response.content)  # Load icon data into BytesIO
-            icon_pixmap = QPixmap()
-            icon_pixmap.loadFromData(icon_data.read())  # Load QPixmap from icon data
-
-            # Create a QLabel for the icon
-            icon_label = QLabel()
-            icon_label.setPixmap(icon_pixmap)
-            icon_label.setFixedSize(150, 150)
-            icon_label.setScaledContents(True)
-
-            left_lower_layout.addWidget(icon_label)
-        except requests.exceptions.RequestException as e:
-            print(f"Failed to load weather icon: {e}")
-
-        left_lower_section.setLayout(left_lower_layout)
-
-        lower_layout.addWidget(left_lower_section, alignment=Qt.AlignCenter | Qt.AlignTop)
-        lower_layout.addWidget(right_lower_section, alignment=Qt.AlignRight)
-
-        lower_section.setLayout(lower_layout)
-        top_left_layout.addWidget(lower_section)
-        top_left_section.setLayout(top_left_layout)
-
-        right_section = QWidget()
-        right_layout = QVBoxLayout()
-
-        wind_section = QWidget()
-        wind_layout = QHBoxLayout()
-
-        humidity_section = QWidget()
-        humidity_section.setMinimumWidth(150)
-        humidity_layout = QVBoxLayout()
-
-        humidity_label = QLabel("Humidity")
-        humidity_measure = QLabel(f"{humidity}%")
-        humidity_label.setStyleSheet("font-size: 15px; color: gray;")
-        humidity_measure.setStyleSheet("font-size: 30px;")
-
-        humidity_layout.addWidget(humidity_label, alignment=Qt.AlignLeft)
-        humidity_layout.addWidget(humidity_measure, alignment=Qt.AlignLeft)
-        humidity_section.setLayout(humidity_layout)
-        wind_layout.addWidget(humidity_section)
-
-        wind_speed_section = QWidget()
-        wind_speed_section.setMinimumWidth(150)
-        wind_speed_layout = QVBoxLayout()
-
-        wind_speed_label = QLabel("Wind Speed")
-        wind_speed_measure = QLabel(f"{wind_speed: .2f} km/h")
-        wind_speed_label.setStyleSheet("font-size: 15px; color: gray;")
-        wind_speed_measure.setStyleSheet("font-size: 30px;")
-
-        wind_speed_layout.addWidget(wind_speed_label, alignment=Qt.AlignLeft)
-        wind_speed_layout.addWidget(wind_speed_measure, alignment=Qt.AlignLeft)
-        wind_speed_section.setLayout(wind_speed_layout)
-
-        wind_layout.addWidget(wind_speed_section)
-        wind_section.setLayout(wind_layout)
-
-        pres_cloud_section = QWidget()
-        pres_cloud_layout = QHBoxLayout()
-
-        cloudiness_section = QWidget()
-        cloudiness_section.setMinimumWidth(150)
-        cloudiness_layout = QVBoxLayout()
-
-        cloudiness_label = QLabel("Cloudiness")
-        cloudiness_measure = QLabel(f"{cloudiness}%")
-        cloudiness_label.setStyleSheet("font-size: 15px; color: gray;")
-        cloudiness_measure.setStyleSheet("font-size: 30px;")
-
-        cloudiness_layout.addWidget(cloudiness_label, alignment=Qt.AlignLeft)
-        cloudiness_layout.addWidget(cloudiness_measure, alignment=Qt.AlignLeft)
-
-        cloudiness_section.setLayout(cloudiness_layout)
-
-        pressure_section = QWidget()
-        pressure_section.setMinimumWidth(150)
-        pressure_layout = QVBoxLayout()
-
-        pressure_label = QLabel("Pressure")
-        pressure_measure = QLabel(f"{pressure} hPa")
-        pressure_label.setStyleSheet("font-size: 15px; color: gray;")
-        pressure_measure.setStyleSheet("font-size: 30px;")
-
-        pressure_layout.addWidget(pressure_label, alignment=Qt.AlignLeft)
-        pressure_layout.addWidget(pressure_measure, alignment=Qt.AlignLeft)
-
-        pressure_section.setLayout(pressure_layout)
-
-        pres_cloud_layout.addWidget(pressure_section)
-        pres_cloud_layout.addWidget(cloudiness_section)
-        pres_cloud_section.setLayout(pres_cloud_layout)
-
-        right_layout.addWidget(wind_section)
-        right_layout.addWidget(pres_cloud_section)
-
-        description_section = QWidget()
-        description_layout = QVBoxLayout()
-        description_layout.setContentsMargins(0, 20, 0, 0)
-
-        description_def = QLabel("Description")
-        description_label = QLabel(f"{description.capitalize()}")
-        description_def.setStyleSheet("font-size: 15px; color: gray;")
-        description_label.setStyleSheet("font-size: 30px;")
-        description_layout.addWidget(description_def)
-        description_layout.addWidget(description_label)
-        description_section.setLayout(description_layout)
-
-        right_layout.addWidget(description_section, alignment=Qt.AlignBottom | Qt.AlignCenter)
-
-        right_section.setLayout(right_layout)
-
-        weather_layout.addWidget(top_left_section, alignment=Qt.AlignLeft | Qt.AlignTop)
-        weather_layout.addWidget(right_section, alignment=Qt.AlignCenter | Qt.AlignTop)
-
-        # Create a container widget for scroll content
-        scroll_widget = QWidget()
-        scroll_widget.setLayout(weather_layout)
-
-        # Add container widget to the scroll area
-        self.scroll_area.setWidget(scroll_widget)
-
-        # Add scroll area to the main layout
-        self.main_layout.addWidget(self.scroll_area)
-        self.loading_overlay.hide()
-
-    def get_location(self):
-        response = requests.get("https://ipinfo.io/json")
-        data = response.json()
-
-        country_code = data["country"]
-        country_name = pycountry.countries.get(alpha_2=country_code).name if country_code else None
-
-        return {
-            "city": data["city"],
-            "loc": data["loc"],
-            "country": country_name
-
-        }
-
     @staticmethod
     def create_separator():
         line = QFrame()
@@ -788,4 +722,3 @@ class HomePage:
     def display_error(self, error_message):
         self.loading_overlay.hide()
         self.result_label.setText(f"Error: {error_message}")
-

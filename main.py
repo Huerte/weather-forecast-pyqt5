@@ -22,9 +22,9 @@ class MainWindow:
 
   def setup_window(self):
     self.main_window = qtw.QMainWindow()
-    self.main_window.setWindowTitle("Binoang na Window")
+    self.main_window.setWindowTitle("Wimbus")
     self.main_window.setStyleSheet("background-color: #131621; color: white")
-    WIDTH, HEIGHT = 1020, 600
+    WIDTH, HEIGHT = 1050, 650
     self.main_window.setGeometry(0, 0, WIDTH, HEIGHT)
 
     self.stack_widget = qtw.QStackedWidget()
@@ -35,11 +35,9 @@ class MainWindow:
 
     # Amo ini an pagkasunod nan mga window, index zero an una mo
     # respawn na page pag run ng program
-    self.stack_widget.addWidget(self.home_page)  # index 2
-
     self.stack_widget.addWidget(self.login_page)  # index 0
     self.stack_widget.addWidget(self.register_page)  # index 1
-
+    self.stack_widget.addWidget(self.home_page)  # index 2
 
     self.main_window.setCentralWidget(self.stack_widget)
 
