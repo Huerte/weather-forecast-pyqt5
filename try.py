@@ -1,6 +1,98 @@
-from PyQt5.QtWidgets import QApplication, QPushButton, QMainWindow
-from PyQt5.QtCore import QPropertyAnimation, QRect, QEvent
+import sys
+from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QPixmap, QPainter, QRegion, QFont
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGraphicsBlurEffect, QStackedLayout
+)
 
+
+class BlurredBackgroundWidget(QWidget):
+    def __init__(self, parent=None, blur_radius=15):
+        super().__init__(parent)
+        self.blur_radius = blur_radius
+        self.setAttribute(Qt.WA_TranslucentBackground)  # Enable transparency
+        self.setStyleSheet("background: transparent;")  # Transparent background for the widget
+
+        # Main layout for stacking blurred background and sharp content
+        self.stacked_layout = QStackedLayout(self)
+        self.stacked_layout.setStackingMode(QStackedLayout.StackAll)
+
+        # Label to display the blurred background
+        self.blur_label = QLabel(self)
+        self.blur_label.setStyleSheet("background: transparent;")
+        self.stacked_layout.addWidget(self.blur_label)
+
+        # Widget for the sharp content
+        self.content_widget = QWidget(self)
+        self.content_layout = QVBoxLayout(self.content_widget)
+        self.content_layout.setContentsMargins(10, 10, 10, 10)  # Margins for content
+        self.stacked_layout.addWidget(self.content_widget)
+
+    def add_content(self, widget):
+        """Add a widget to the content layer."""
+        self.content_layout.addWidget(widget)
+
+    def blur_background(self):
+        """Capture and blur the background."""
+        pixmap = QPixmap(self.size())
+        pixmap.fill(Qt.transparent)
+
+        # Render the widget's background into the pixmap
+        painter = QPainter(pixmap)
+        self.render(painter, QPoint(), QRegion(self.rect()), renderFlags=QPainter.OpaqueHint)
+        painter.end()
+
+        # Apply the blur effect
+        blur_effect = QGraphicsBlurEffect()
+        blur_effect.setBlurRadius(self.blur_radius)
+        self.blur_label.setPixmap(pixmap)
+        self.blur_label.setGraphicsEffect(blur_effect)
+
+
+class ExampleApp(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Blurred Background Example")
+        self.setStyleSheet("background-color: rgba(255, 255, 255, 1);")  # Full opaque window background
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Create a blurred background widget
+        self.top_section = BlurredBackgroundWidget(blur_radius=15)
+        self.top_section.setFixedHeight(200)  # Fixed height for the demo
+        main_layout.addWidget(self.top_section)
+
+        # Add content to the blurred section
+        date_label = QLabel("Today, December 5")
+        date_label.setFont(QFont("Arial", 15))
+        self.top_section.add_content(date_label)
+
+        city_label = QLabel("Sample City, Country")
+        city_label.setFont(QFont("Arial", 20))
+        self.top_section.add_content(city_label)
+
+        temperature_label = QLabel("25°C, Sunny")
+        temperature_label.setFont(QFont("Arial", 30))
+        self.top_section.add_content(temperature_label)
+
+        # Trigger the blur effect once the layout is set
+        self.top_section.blur_background()
+
+        # Placeholder for the main content below
+        placeholder_label = QLabel("Other window content...")
+        placeholder_label.setFont(QFont("Arial", 15))
+        main_layout.addWidget(placeholder_label)
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = ExampleApp()
+    window.resize(800, 600)
+    window.show()
+    sys.exit(app.exec_())
+
+'''
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -38,28 +130,14 @@ if __name__ == "__main__":
     window.show()
     app.exec()
 '''
+'''
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QGraphicsBlurEffect
 from PyQt5.QtGui import QColor, QPalette
 from PyQt5.QtCore import Qt
 
 
-class BlurryWidget(QWidget):
-    def __init__(self):
-        super().__init__()
 
-        # Set up the blur effect
-        blur_effect = QGraphicsBlurEffect()
-        blur_effect.setBlurRadius(5)  # Adjust the radius for more or less blur
-
-        # Apply the blur effect to the widget
-        self.setGraphicsEffect(blur_effect)
-
-        # Set a semi-transparent background with white color
-        self.setAutoFillBackground(True)
-        palette = self.palette()
-        palette.setColor(QPalette.Background, QColor(255, 255, 255, 150))  # White with 150 alpha
-        self.setPalette(palette)
 
         # Layout and example content
         layout = QVBoxLayout(self)

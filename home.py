@@ -4,56 +4,17 @@ from io import BytesIO
 from datetime import datetime
 from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, \
     QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget, \
-    QFrame, QScrollArea, QDialog
+    QFrame, QScrollArea
 from PyQt5.QtCore import Qt, QPoint, QSize
 from PyQt5.QtGui import QIcon, QFont, QPixmap, QMovie
 from WeatherRequest import WeatherThread
 from LocationRequest import GeocodingThread
-
-
-class LoadingOverlay(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
-        self.setModal(True)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setFixedSize(parent.size())
-
-        # Transparent background with centered layout
-        main_layout = QVBoxLayout(self)
-        main_layout.setAlignment(Qt.AlignCenter)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-
-        # Loading animation
-        self.loading_label = QLabel()
-        self.loading_label.setAttribute(Qt.WA_TranslucentBackground)  # Make the label background transparent
-        # Load the GIF animation
-        movie = QMovie("assets/animation/loading.gif")
-        movie.setScaledSize(QSize(75, 75))
-        self.loading_label.setMovie(movie)
-        movie.start()
-        # Keep reference to the movie to prevent garbage collection
-        self.movie = movie
-        # Optionally, set the parent widget to be transparent too (if needed)
-        self.loading_label.setStyleSheet("background: transparent;")
-
-        # Add label to layout
-        loading_wrapper = QWidget()
-        loading_wrapper.setAttribute(Qt.WA_TranslucentBackground)
-        loading_layout = QVBoxLayout(loading_wrapper)
-        loading_layout.setAlignment(Qt.AlignCenter)
-        loading_layout.addWidget(self.loading_label)
-
-        main_layout.addWidget(loading_wrapper)
-
-    def resizeEvent(self, event):
-        """Ensure the overlay stays centered when resized."""
-        self.setFixedSize(self.parent().size())
-        super().resizeEvent(event)
+from Loading import LoadingOverlay
 
 
 class HomePage:
     def __init__(self, stack_widget: QStackedWidget, loading_overlay):
+        self.font_color = "black"
         self.country = None
         self.thread = None
         self.loading_overlay = loading_overlay
@@ -185,12 +146,7 @@ class HomePage:
         self.city_label.setStyleSheet("color: white")
         self.main_layout.addWidget(self.city_label)
 
-        data = self.get_location()
-        city = data['city']
-        coordinates = data['loc'].split(',')
-        self.fetch_weather_data(coordinates[0], coordinates[1])
-        self.city_name = city
-        self.country = data['country']
+        self.get_current_location()
 
         self.result_label = QLabel("Weather data will be displayed here.")
         self.result_label.setStyleSheet("color: white; font-size: 15px")
@@ -201,6 +157,14 @@ class HomePage:
         self.loading_overlay.hide()
 
         return self.home_page
+
+    def get_current_location(self):
+        data = self.get_location()
+        city = data['city']
+        coordinates = data['loc'].split(',')
+        self.fetch_weather_data(coordinates[0], coordinates[1])
+        self.city_name = city
+        self.country = data['country']
 
     def get_weather(self):
         city = self.search_input.text().title()
@@ -261,13 +225,20 @@ class HomePage:
         # Extract the current date and time separately
         current_day = now.strftime("%d")
         current_month = now.strftime("%B")
-        current_time = now.strftime("%H:%M %p")
+        current_time = now.strftime("%I:%M %p")
         current_weekday = now.strftime("%A")
 
         weather_layout = QVBoxLayout()
         weather_layout.setContentsMargins(0, 0, 0, 0)
 
         top_section = QWidget()
+        top_section.setObjectName('top_widget')
+        top_section.setStyleSheet('''
+            QWidget#top_widget {
+                background-color: rgba(255, 255, 255, 0.3);
+                border-radius: 15px;            
+            }
+        ''')
         top_layout = QHBoxLayout()
         top_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -277,7 +248,7 @@ class HomePage:
         top_left_section.setContentsMargins(10, 0, 10, 0)
 
         date_label = QLabel(f"Today, {current_day} {current_month}")
-        date_label.setStyleSheet("font-size: 15px;")
+        date_label.setStyleSheet(f"font-size: 15px; color: {self.font_color}")
         top_left_layout.addWidget(date_label)
 
         city_label_widget = QWidget()
@@ -285,6 +256,7 @@ class HomePage:
         city_label_layout.setContentsMargins(0, 0, 0, 0)
 
         location_icon = QLabel()
+        location_icon.setStyleSheet(f"color: {self.font_color}")
         location_icon.setFixedSize(30, 30)
         location_icon.setScaledContents(True)
         location_icon.setContentsMargins(0, 0, 0, 0)
@@ -294,7 +266,7 @@ class HomePage:
 
         city_label = QLabel(f"{self.city_name}, {self.country}")
         city_label.setFont(QFont("Arial", 15))
-        city_label.setStyleSheet("margin: 0px;")
+        city_label.setStyleSheet(f"margin: 0px; color: {self.font_color}")
         city_label_layout.addWidget(city_label, alignment=Qt.AlignLeft)
 
         city_label_widget.setLayout(city_label_layout)
@@ -302,6 +274,7 @@ class HomePage:
 
         week_day_label = QLabel(current_weekday)
         week_day_label.setFont(QFont("Arial", 23, QFont.Bold))
+        week_day_label.setStyleSheet(f"color: {self.font_color}")
         top_left_layout.addWidget(week_day_label, alignment=Qt.AlignLeft)
 
         temperature_widget = QWidget()
@@ -314,14 +287,17 @@ class HomePage:
 
         temp_label = QLabel(f"{temp_celsius:.2f} °C")
         temp_label.setFont(QFont("Arial", 45, QFont.Bold))
+        temp_label.setStyleSheet(f"color: {self.font_color}")
         temp_layout.addWidget(temp_label, alignment=Qt.AlignLeft)
 
         current_weather_label = QLabel("Current Weather")
         current_weather_label.setFont(QFont("Arial", 10, QFont.Bold))
+        current_weather_label.setStyleSheet(f"color: {self.font_color}")
         temp_layout.addWidget(current_weather_label, alignment=Qt.AlignLeft)
 
         time_label = QLabel(current_time)
         time_label.setFont(QFont("Arial", 10, QFont.Bold))
+        time_label.setStyleSheet(f"color: {self.font_color}")
         temp_layout.addWidget(time_label, alignment=Qt.AlignLeft)
 
         temp_widget.setLayout(temp_layout)
@@ -337,6 +313,8 @@ class HomePage:
 
         feels_like_label_def = QLabel(f"Feels Like")
         feels_like_label_def.setFont(QFont("Arial", 12, QFont.Bold))
+        feels_like_label.setStyleSheet(f"color: {self.font_color}")
+        feels_like_label_def.setStyleSheet(f"color: {self.font_color}")
         feels_like_layout.addWidget(feels_like_label_def, alignment=Qt.AlignTop)
 
         feels_like_widget.setLayout(feels_like_layout)
@@ -360,6 +338,7 @@ class HomePage:
 
             # Create a QLabel for the icon
             icon_label = QLabel()
+            icon_label.setStyleSheet(f"color: {self.font_color}")
             icon_label.setPixmap(icon_pixmap)
             icon_label.setFixedSize(250, 250)
             icon_label.setScaledContents(True)
@@ -375,8 +354,14 @@ class HomePage:
         top_section.setLayout(top_layout)
 
         lower_section = QWidget()
+        lower_section.setObjectName('low_widget')
+        lower_section.setStyleSheet('''
+            QWidget#low_widget {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 15px;            }
+        ''')
         lower_layout = QHBoxLayout()
-        lower_section.setContentsMargins(0, 50, 0, 0)
+        lower_section.setContentsMargins(0, 20, 0, 0)
 
         humidity_section = QWidget()
         humidity_layout = QVBoxLayout()
@@ -389,9 +374,10 @@ class HomePage:
         humidity_icon.setContentsMargins(0, 0, 0, 0)
         humidity_icon_pixmap = QPixmap("assets/icons/humidity.png")
         humidity_icon.setPixmap(humidity_icon_pixmap)
+        humidity_icon.setStyleSheet(f"color: {self.font_color}")
         humidity_measure = QLabel(f"{humidity}%")
-        humidity_label.setStyleSheet("font-size: 15px; color: gray;")
-        humidity_measure.setStyleSheet("font-size: 30px;")
+        humidity_label.setStyleSheet(f"font-size: 15px; color: {self.font_color};")
+        humidity_measure.setStyleSheet(f"font-size: 30px; color: {self.font_color}")
 
         humidity_layout.addWidget(humidity_label, alignment=Qt.AlignTop | Qt.AlignCenter)
         humidity_layout.addWidget(humidity_icon, alignment=Qt.AlignCenter)
@@ -409,9 +395,10 @@ class HomePage:
         wind_icon.setContentsMargins(0, 0, 0, 0)
         wind_icon_pixmap = QPixmap("assets/icons/air.png")
         wind_icon.setPixmap(wind_icon_pixmap)
+        wind_icon.setStyleSheet(f"color: {self.font_color}")
         wind_speed_measure = QLabel(f"{wind_speed: .2f} km/h")
-        wind_speed_label.setStyleSheet("font-size: 15px; color: gray;")
-        wind_speed_measure.setStyleSheet("font-size: 30px;")
+        wind_speed_label.setStyleSheet(f"font-size: 15px; color: {self.font_color};")
+        wind_speed_measure.setStyleSheet(f"font-size: 30px; color: {self.font_color}")
 
         wind_speed_layout.addWidget(wind_speed_label, alignment=Qt.AlignTop | Qt.AlignCenter)
         wind_speed_layout.addWidget(wind_icon, alignment=Qt.AlignCenter)
@@ -430,9 +417,10 @@ class HomePage:
         pressure_icon.setContentsMargins(0, 0, 0, 0)
         pressure_icon_pixmap = QPixmap("assets/icons/air pressure.png")
         pressure_icon.setPixmap(pressure_icon_pixmap)
+        pressure_icon.setStyleSheet(f"color: {self.font_color}")
         pressure_measure = QLabel(f"{pressure} hPa")
-        pressure_label.setStyleSheet("font-size: 15px; color: gray;")
-        pressure_measure.setStyleSheet("font-size: 30px;")
+        pressure_label.setStyleSheet(f"font-size: 15px; color: {self.font_color};")
+        pressure_measure.setStyleSheet(f"font-size: 30px; color: {self.font_color}")
 
         pressure_layout.addWidget(pressure_label, alignment=Qt.AlignTop | Qt.AlignCenter)
         pressure_layout.addWidget(pressure_icon, alignment=Qt.AlignCenter)
@@ -450,9 +438,10 @@ class HomePage:
         cloudiness_icon.setContentsMargins(0, 0, 0, 0)
         cloudiness_icon_pixmap = QPixmap("assets/icons/cloud.png")
         cloudiness_icon.setPixmap(cloudiness_icon_pixmap)
+        cloudiness_icon.setStyleSheet(f"color: {self.font_color}")
         cloudiness_measure = QLabel(f"{cloudiness}%")
-        cloudiness_label.setStyleSheet("font-size: 15px; color: gray;")
-        cloudiness_measure.setStyleSheet("font-size: 30px;")
+        cloudiness_label.setStyleSheet(f"font-size: 15px; color: {self.font_color};")
+        cloudiness_measure.setStyleSheet(f"font-size: 30px; color: {self.font_color}")
 
         cloudiness_layout.addWidget(cloudiness_label, alignment=Qt.AlignTop | Qt.AlignCenter)
         cloudiness_layout.addWidget(cloudiness_icon, alignment=Qt.AlignCenter)
@@ -466,35 +455,57 @@ class HomePage:
         description_def = QLabel("Description")
         null_widget = QLabel()
         description_label = QLabel(f"{description.capitalize()}")
-        description_def.setStyleSheet("font-size: 15px; color: gray;")
-        description_label.setStyleSheet("font-size: 30px;")
+        description_def.setStyleSheet(f"font-size: 15px; color: {self.font_color};")
+        description_label.setStyleSheet(f"font-size: 30px; color: {self.font_color}")
         description_layout.addWidget(description_def, alignment=Qt.AlignTop | Qt.AlignCenter)
         description_layout.addWidget(description_label, alignment=Qt.AlignTop | Qt.AlignCenter)
         description_layout.addWidget(null_widget, alignment=Qt.AlignCenter)
         description_section.setLayout(description_layout)
 
-        lower_layout.addWidget(humidity_section)
-        lower_layout.addWidget(wind_speed_section)
-        lower_layout.addWidget(pressure_section)
-        lower_layout.addWidget(cloudiness_section)
-        lower_layout.addWidget(description_section)
+        lower_layout.addWidget(humidity_section, alignment=Qt.AlignTop)
+        lower_layout.addWidget(wind_speed_section, alignment=Qt.AlignTop)
+        lower_layout.addWidget(pressure_section, alignment=Qt.AlignTop)
+        lower_layout.addWidget(cloudiness_section, alignment=Qt.AlignTop)
+        lower_layout.addWidget(description_section, alignment=Qt.AlignTop)
         lower_section.setLayout(lower_layout)
 
         weather_layout.addWidget(top_section, alignment=Qt.AlignCenter)
         weather_layout.addWidget(lower_section, alignment=Qt.AlignCenter | Qt.AlignTop)
 
-######################################################################################
-
         scroll_widget = QWidget()
+        scroll_widget. setStyleSheet('''
+            QWidget {
+                background: transparent;
+                border: none;
+            }
+        ''')
+
         scroll_widget.setContentsMargins(0, 0, 0, 0)
         scroll_widget.setLayout(weather_layout)
 
         # Add container widget to the scroll area
         self.scroll_area.setWidget(scroll_widget)
+        self.scroll_area.setStyleSheet("""
+            QScrollArea {
+                background: transparent;
+                border: none;
+            }
+            QScrollArea > QWidget {
+                background: transparent;
+            }
+            QScrollBar:vertical, QScrollBar:horizontal {
+                background: transparent;
+            }
+        """)
 
         # Add scroll area to the main layout
         self.main_layout.addWidget(self.scroll_area)
         self.loading_overlay.hide()
+
+    @staticmethod
+    def set_transparent_background(widget):
+        """ Recursively sets the background of all child widgets to transparent. """
+        widget.setStyleSheet("background: transparent; border: none;")
 
     @staticmethod
     def get_location():
@@ -681,6 +692,7 @@ class HomePage:
         response = confirmation.exec_()
         if response == QMessageBox.Yes:
             self.reset_home_widgets()
+            self.get_current_location()
             self.stack_widget.setCurrentIndex(0)
 
     def reset_home_widgets(self):

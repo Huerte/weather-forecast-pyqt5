@@ -123,7 +123,7 @@ class LoginWindow:
                 if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
                     print(f"Welcome back, {username}!")
 
-                    #####################################
+
                     self.stack_widget.setCurrentIndex(2)
 
                     return True

@@ -23,8 +23,18 @@ class MainWindow:
   def setup_window(self):
     self.main_window = qtw.QMainWindow()
     self.main_window.setWindowTitle("Wimbus")
-    self.main_window.setStyleSheet("background-color: #131621; color: white")
-    WIDTH, HEIGHT = 1050, 650
+
+    # Set background image and text color
+    self.main_window.setStyleSheet("""
+        QMainWindow {
+            background-image: url('assets/bg.jpg'); 
+            background-position: center;
+            background-repeat: no-repeat;
+            color: white;
+        }
+    """)
+
+    WIDTH, HEIGHT = 1050, 600
     self.main_window.setGeometry(0, 0, WIDTH, HEIGHT)
 
     self.stack_widget = qtw.QStackedWidget()
