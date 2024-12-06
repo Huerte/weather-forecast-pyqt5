@@ -343,8 +343,10 @@ class HomePage:
         lower_section.setStyleSheet('''
             QWidget#low_widget {
             background-color: rgba(255, 255, 255, 0.4);
-            border-radius: 15px;            }
+            border-radius: 15px;            
+            }
         ''')
+        lower_section.setMinimumHeight(150)
         lower_layout = QHBoxLayout()
         lower_section.setContentsMargins(0, 0, 0, 0)
 
@@ -687,12 +689,6 @@ class HomePage:
     def reset_home_widgets(self):
         # Reset the search input
         self.search_input.clear()
-
-        # Reset the result label
-        self.result_label.setText("Weather data will be displayed here.")
-
-        # Reset the city label
-        self.city_label.setText("")
 
         # Remove the scroll area if it exists
         if hasattr(self, 'scroll_area') and self.scroll_area:

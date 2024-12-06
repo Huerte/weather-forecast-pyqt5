@@ -34,7 +34,7 @@ class MainWindow:
         }
     """)
 
-    WIDTH, HEIGHT = 1050, 550
+    WIDTH, HEIGHT = 1050, 600
     self.main_window.setGeometry(0, 0, WIDTH, HEIGHT)
 
     self.stack_widget = qtw.QStackedWidget()
