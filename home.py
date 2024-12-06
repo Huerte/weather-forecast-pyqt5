@@ -4,7 +4,7 @@ from io import BytesIO
 from datetime import datetime
 from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, \
     QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget, \
-    QFrame, QScrollArea
+    QFrame, QScrollArea, QStyle
 from PyQt5.QtCore import Qt, QPoint, QSize
 from PyQt5.QtGui import QIcon, QFont, QPixmap, QMovie
 from WeatherRequest import WeatherThread
@@ -14,7 +14,7 @@ from Loading import LoadingOverlay
 
 class HomePage:
     def __init__(self, stack_widget: QStackedWidget, loading_overlay):
-        self.font_color = "black"
+        self.font_color = "#edeef1"
         self.country = None
         self.thread = None
         self.loading_overlay = loading_overlay
@@ -54,6 +54,7 @@ class HomePage:
         self.menu_btn.setIcon(QIcon("assets/icons/menu1.png"))
         self.menu_btn.setIconSize(QSize(30, 30))
         self.menu_btn.clicked.connect(lambda: self.open_menu())
+        self.menu_btn.setStyleSheet(f"color: {self.font_color}; background-color: transparent;")
         self.menu_btn.setFocusPolicy(Qt.NoFocus)
         self.menu_panel = QWidget(self.home_page)
         self.menu_panel.setWindowFlags(Qt.FramelessWindowHint | Qt.Popup)
@@ -127,6 +128,7 @@ class HomePage:
                 border: none;
                 padding: 0px 5px;
                 font-size: 15px;
+                color: white;
             }
         ''')
         self.search_input.setFixedHeight(40)
@@ -235,7 +237,7 @@ class HomePage:
         top_section.setObjectName('top_widget')
         top_section.setStyleSheet('''
             QWidget#top_widget {
-                background-color: rgba(255, 255, 255, 0.3);
+                background-color: rgba(255, 255, 255, 0.4);
                 border-radius: 15px;            
             }
         ''')
@@ -357,7 +359,7 @@ class HomePage:
         lower_section.setObjectName('low_widget')
         lower_section.setStyleSheet('''
             QWidget#low_widget {
-            background-color: rgba(255, 255, 255, 0.3);
+            background-color: rgba(255, 255, 255, 0.4);
             border-radius: 15px;            }
         ''')
         lower_layout = QHBoxLayout()

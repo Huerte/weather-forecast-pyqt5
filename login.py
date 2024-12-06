@@ -17,7 +17,6 @@ class LoginWindow:
         self.loading = LoadingOverlay(self.window)
 
     def display(self):
-        # Create a vertical layout for the self window
         layout = QVBoxLayout()
 
         layout.addSpacing(20)
@@ -37,7 +36,7 @@ class LoginWindow:
             QLineEdit {
                 border-color: none;  /* Border color */
                 border: 0.5px solid white;
-                color: white;
+                color: black;
                 border-radius: 20px;      
                 padding: 5px;            
                 font-size: 15px;   
@@ -58,7 +57,7 @@ class LoginWindow:
             QLineEdit {
                 border-color: none;
                 border: 0.5px solid white;
-                color: white;
+                color: black;
                 border-radius: 20px;
                 padding: 5px;
                 font-size: 15px; 

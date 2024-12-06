@@ -8,117 +8,130 @@ from message_display import show_info_message, show_error_message
 
 class RegisterWindow:
     def __init__(self, stack_widget):
+
+        self.window = QWidget()
         self.stack_widget = stack_widget
         self.name_input = ""
         self.password_input, self.password2_input = "", ""
 
     def display(self):
-        self.window = QWidget()
-
-        # Create a vertical layout for the self.window
+        # Create a vertical layout for the main window
         layout = QVBoxLayout()
 
-        layout.addSpacing(20)
+        # Create a background widget for the login window
+        login_window = QWidget()
+        login_window.setMinimumWidth(400)  # Allow resizing to a minimum width
+        login_window.setMaximumHeight(700)  # Fixed height if desired
+        login_window.setObjectName("register_window")
+        login_window.setStyleSheet('''
+            QWidget#register_window {
+                background-color: rgba(255, 255, 255, 0.08);  /* Slightly opaque */
+                border-radius: 30px;
+                box-shadow: 1px 1px 50px rgba(0, 0, 0, 0.5);
+            }
+        ''')
+
+        # Create a layout for the login window contents
+        login_layout = QVBoxLayout()
+        login_layout.setAlignment(Qt.AlignTop)  # Keep content at the top of the window
+
+        login_layout.addSpacing(30)
 
         header = QLabel("Register Account")
         header.setStyleSheet("font-size: 18px; font-weight: bold; color: white")
-        layout.addWidget(header, alignment=Qt.AlignCenter)
+        login_layout.addWidget(header, alignment=Qt.AlignCenter)
 
-        layout.addSpacing(20)
+        login_layout.addSpacing(30)
 
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("Enter your name")
-        self.name_input.returnPressed.connect(self.proceed_to_home_page)
+        self.name_input.setFixedSize(300, 50)  # Fixed size for the input
         self.name_input.setStyleSheet("""
             QLineEdit {
-                border-color: none;
-                border: 0.5px solid white;
-                color: white;
+                border: 1px solid white;
+                color: black;
                 border-radius: 20px;
                 padding: 5px;
                 font-size: 15px;
+                background-color: transparent;
             }
         """)
-        self.name_input.setFixedHeight(50)  # Standardize input height
-        self.name_input.setFixedWidth(300)  # Standardize input width
-        layout.addWidget(self.name_input)
+        login_layout.addWidget(self.name_input, alignment=Qt.AlignCenter)
 
-        layout.addSpacing(5)
+        login_layout.addSpacing(5)
 
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Enter your password")
-        self.password_input.returnPressed.connect(self.proceed_to_home_page)
+        self.password_input.setFixedSize(300, 50)
         self.password_input.setStyleSheet("""
             QLineEdit {
-                border-color: none;
-                border: 0.5px solid white;
-                color: white;
-                border-radius: 20px; 
-                padding: 5px;       
-                font-size: 15px;        
+                border: 1px solid white;
+                color: black;
+                border-radius: 20px;
+                padding: 5px;
+                font-size: 15px;
+                background-color: transparent;
             }
         """)
-        self.password_input.setFixedHeight(50)  # Standardize input height
-        self.password_input.setFixedWidth(300)  # Standardize input width
-        layout.addWidget(self.password_input)
+        login_layout.addWidget(self.password_input, alignment=Qt.AlignCenter)
 
-        layout.addSpacing(5)
+        login_layout.addSpacing(5)
 
         self.password2_input = QLineEdit()
         self.password2_input.setPlaceholderText("Verify your password")
-        self.password2_input.returnPressed.connect(self.proceed_to_home_page)
+        self.password2_input.setFixedSize(300, 50)
         self.password2_input.setStyleSheet("""
             QLineEdit {
-                border-color: none;  /* Border color */
-                border: 0.5px solid white;
-                color: white;
-                border-radius: 20px;   
-                padding: 5px;         
+                border: 1px solid white;
+                color: black;
+                border-radius: 20px;
+                padding: 5px;
                 font-size: 15px;
+                background-color: transparent;
             }
         """)
-        self.password2_input.setFixedHeight(50)  # Standardize input height
-        self.password2_input.setFixedWidth(300)  # Standardize input width
-        layout.addWidget(self.password2_input)
+        login_layout.addWidget(self.password2_input, alignment=Qt.AlignCenter)
 
-        layout.addSpacing(20)
+        login_layout.addSpacing(20)
 
         register_button = QPushButton("Register")
-        register_button.setFocusPolicy(Qt.NoFocus)
-        register_button.setFixedHeight(40)
-        register_button.setFixedWidth(150)
+        register_button.setFixedSize(150, 40)
         register_button.setStyleSheet("""
-                    font-size: 15px;
-                    border-radius: 20px;
-                    background-color: #007BFF;
-                    color: white;
-                """)
+            QPushButton {
+                font-size: 15px;
+                border-radius: 20px;
+                background-color: #007BFF;
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: #0056b3;
+            }
+        """)
         register_button.clicked.connect(lambda: self.proceed_to_home_page())
-        layout.addWidget(register_button, alignment=Qt.AlignCenter)
+        login_layout.addWidget(register_button, alignment=Qt.AlignCenter)
 
-        layout.addSpacing(5)
+        login_layout.addSpacing(10)
 
         footer = QWidget()
-        footer.setFixedWidth(210)
-        layout2 = QGridLayout()
-
-        # Create and configure the label
-        label = QLabel("Already had an Account?")
-        label.setStyleSheet("margin-right: 0px; font-size: 12px; color: white")
-        layout2.addWidget(label, 0, 0)
-
-        # Create and configure the sign-up button
+        footer_layout = QGridLayout()
+        label = QLabel("Already have an account?")
+        label.setStyleSheet("font-size: 12px; color: white")
         login_button = QPushButton("Sign up")
         login_button.setFocusPolicy(Qt.NoFocus)
         login_button.setStyleSheet("border: none; color: #4757ff; font-size: 12px")
-        login_button.clicked.connect(lambda: self.stack_widget.setCurrentIndex(0))
-        layout2.addWidget(login_button, 0, 1)
+        login_button.clicked.connect(lambda: self.go_to_login_page())
+        footer_layout.addWidget(label, 0, 0)
+        footer_layout.addWidget(login_button, 0, 1)
+        footer.setLayout(footer_layout)
 
-        # Set the layout to the footer widget
-        footer.setLayout(layout2)
+        login_layout.addWidget(footer, alignment=Qt.AlignCenter)
 
-        # Add the footer to the main layout
-        layout.addWidget(footer, alignment=Qt.AlignCenter)
+        login_window.setLayout(login_layout)
+
+        # Use stretch in the outer layout to allow the login window to center itself
+        layout.addStretch()  # Push the content to center
+        layout.addWidget(login_window, alignment=Qt.AlignCenter)
+        layout.addStretch()  # Push the content to center
 
         self.window.setLayout(layout)
         layout.setAlignment(Qt.AlignCenter)
@@ -164,6 +177,10 @@ class RegisterWindow:
         finally:
             cursor.close()
             conn.close()
+
+    def go_to_login_page(self):
+        self.clear_input_fields()
+        self.stack_widget.setCurrentIndex(0)
 
     def clear_input_fields(self):
         self.name_input.clear()
