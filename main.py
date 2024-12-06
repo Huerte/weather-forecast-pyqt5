@@ -22,7 +22,7 @@ class MainWindow:
 
   def setup_window(self):
     self.main_window = qtw.QMainWindow()
-    self.main_window.setWindowTitle("Wimbus")
+    self.main_window.setWindowTitle("Nimbus")
 
     # Set background image and text color
     self.main_window.setStyleSheet("""
@@ -34,7 +34,7 @@ class MainWindow:
         }
     """)
 
-    WIDTH, HEIGHT = 1050, 600
+    WIDTH, HEIGHT = 1050, 550
     self.main_window.setGeometry(0, 0, WIDTH, HEIGHT)
 
     self.stack_widget = qtw.QStackedWidget()

@@ -4,12 +4,14 @@ from io import BytesIO
 from datetime import datetime
 from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, \
     QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget, \
-    QFrame, QScrollArea, QStyle
+    QFrame, QScrollArea
 from PyQt5.QtCore import Qt, QPoint, QSize
-from PyQt5.QtGui import QIcon, QFont, QPixmap, QMovie
+from PyQt5.QtGui import QIcon, QFont, QPixmap
 from WeatherRequest import WeatherThread
 from LocationRequest import GeocodingThread
 from Loading import LoadingOverlay
+from message_display import show_error_message
+from icon_color_changer import change_icon_color
 
 
 class HomePage:
@@ -41,28 +43,27 @@ class HomePage:
         self.main_layout.setContentsMargins(10, 0, 10, 0)
 
         top_layout = QHBoxLayout()
-        top_layout.setContentsMargins(0, 10, 0, 0)
+        top_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Banner (Log Out Section)
         banner = QWidget()
-        banner.setStyleSheet("margin-top: -5px;")
         banner_layout = QVBoxLayout()
         banner_layout.setContentsMargins(-5, -5, 0, 0)
         banner_layout.setSpacing(0)
 
         self.menu_btn = QPushButton()
         self.menu_btn.setIcon(QIcon("assets/icons/menu1.png"))
-        self.menu_btn.setIconSize(QSize(30, 30))
+        self.menu_btn.setIconSize(QSize(70, 50))
         self.menu_btn.clicked.connect(lambda: self.open_menu())
         self.menu_btn.setStyleSheet(f"color: {self.font_color}; background-color: transparent;")
         self.menu_btn.setFocusPolicy(Qt.NoFocus)
+        change_icon_color(self.menu_btn, "assets/icons/menu1.png", self.font_color)
         self.menu_panel = QWidget(self.home_page)
         self.menu_panel.setWindowFlags(Qt.FramelessWindowHint | Qt.Popup)
         self.menu_panel.setGeometry(0, 0, self.MENU_PANEL_WIDTH, self.MENU_PANEL_WIDTH)
         self.menu_panel.setContentsMargins(0, 0, 0, 0)
 
         # Semi-transparent menu panel
-        self.menu_panel.setStyleSheet("background-color: rgba(0, 0, 0, 0.23); border-radius: 5px;")
+        self.menu_panel.setStyleSheet("background-color: rgba(0, 0, 0, 0.1); border-radius: 5px;")
         self.menu_panel.hide()
 
         menu_layout = QVBoxLayout()
@@ -89,13 +90,8 @@ class HomePage:
         # Header Page (Search Bar Section)
         header_page = QWidget()
         header_page.setContentsMargins(10, 0, 10, 0)
-        header_page.setStyleSheet('''
-            QWidget {
-                background-color: transparent;
-                border: 2px solid white; 
-                border-radius: 25px;
-            }
-        ''')
+        header_page.setStyleSheet(f"background-color: transparent; border: 2px solid {self.font_color}; border-radius: 25px;")
+
         header_page.setFixedWidth(330)
         header_layout = QHBoxLayout()
         header_layout.setContentsMargins(0, 0, 0, 0)
@@ -107,7 +103,6 @@ class HomePage:
         search_btn.setStyleSheet('''
                     QPushButton {
                         font-size: 15px;
-                        color: white;
                         border: none;
                         margin: none;
                     }
@@ -118,19 +113,14 @@ class HomePage:
         search_btn.setIcon(QIcon("assets/icons/search_icon.png"))
         search_btn.setFixedSize(40, 30)
         search_btn.clicked.connect(self.get_weather)
+        change_icon_color(search_btn, "assets/icons/search_icon.png", self.font_color)
         header_layout.addWidget(search_btn)
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Enter the city")
         self.search_input.returnPressed.connect(self.get_weather)
-        self.search_input.setStyleSheet('''
-            QLineEdit {
-                border: none;
-                padding: 0px 5px;
-                font-size: 15px;
-                color: white;
-            }
-        ''')
+        self.search_input.setStyleSheet(f"font-size: 15px; padding: 0px 5px; border: none; color: {self.font_color}")
+
         self.search_input.setFixedHeight(40)
         header_layout.addWidget(self.search_input)
 
@@ -139,20 +129,12 @@ class HomePage:
         top_layout.addWidget(header_page, alignment=Qt.AlignRight)
 
         top_widget = QWidget()
-        top_widget.setStyleSheet("margin-top: 0px;")
         top_widget.setLayout(top_layout)
+        top_widget.setStyleSheet("margin-top: 0px;")
 
         self.main_layout.addWidget(top_widget, alignment=Qt.AlignTop)
 
-        self.city_label = QLabel()
-        self.city_label.setStyleSheet("color: white")
-        self.main_layout.addWidget(self.city_label)
-
         self.get_current_location()
-
-        self.result_label = QLabel("Weather data will be displayed here.")
-        self.result_label.setStyleSheet("color: white; font-size: 15px")
-        self.main_layout.addWidget(self.result_label, alignment=Qt.AlignCenter | Qt.AlignTop)
 
         self.home_page.setLayout(self.main_layout)
 
@@ -171,7 +153,7 @@ class HomePage:
     def get_weather(self):
         city = self.search_input.text().title()
         if not city:
-            self.result_label.setText("Please enter a city.")
+            show_error_message(self.home_page, "Empty field detected", "Please provide the\nname of the city")
             return
 
         self.fetch_geocoding_data(city)
@@ -199,7 +181,7 @@ class HomePage:
 
     def display_weather(self, data):
         self.loading_overlay.hide()
-        self.result_label.setText("")
+        self.main_layout.removeWidget(self.result_label)
         if hasattr(self, 'scroll_area') and self.scroll_area:
             self.main_layout.removeWidget(self.scroll_area)
             self.scroll_area.deleteLater()
@@ -264,6 +246,7 @@ class HomePage:
         location_icon.setContentsMargins(0, 0, 0, 0)
         pixmap = QPixmap("assets/icons/location.png")
         location_icon.setPixmap(pixmap)
+        change_icon_color(location_icon, "assets/icons/location.png",  self.font_color)
         city_label_layout.addWidget(location_icon)
 
         city_label = QLabel(f"{self.city_name}, {self.country}")
@@ -363,7 +346,7 @@ class HomePage:
             border-radius: 15px;            }
         ''')
         lower_layout = QHBoxLayout()
-        lower_section.setContentsMargins(0, 20, 0, 0)
+        lower_section.setContentsMargins(0, 0, 0, 0)
 
         humidity_section = QWidget()
         humidity_layout = QVBoxLayout()
@@ -377,6 +360,7 @@ class HomePage:
         humidity_icon_pixmap = QPixmap("assets/icons/humidity.png")
         humidity_icon.setPixmap(humidity_icon_pixmap)
         humidity_icon.setStyleSheet(f"color: {self.font_color}")
+        change_icon_color(humidity_icon, "assets/icons/humidity.png", self.font_color)
         humidity_measure = QLabel(f"{humidity}%")
         humidity_label.setStyleSheet(f"font-size: 15px; color: {self.font_color};")
         humidity_measure.setStyleSheet(f"font-size: 30px; color: {self.font_color}")
@@ -398,6 +382,7 @@ class HomePage:
         wind_icon_pixmap = QPixmap("assets/icons/air.png")
         wind_icon.setPixmap(wind_icon_pixmap)
         wind_icon.setStyleSheet(f"color: {self.font_color}")
+        change_icon_color(wind_icon, "assets/icons/air.png", self.font_color)
         wind_speed_measure = QLabel(f"{wind_speed: .2f} km/h")
         wind_speed_label.setStyleSheet(f"font-size: 15px; color: {self.font_color};")
         wind_speed_measure.setStyleSheet(f"font-size: 30px; color: {self.font_color}")
@@ -420,6 +405,7 @@ class HomePage:
         pressure_icon_pixmap = QPixmap("assets/icons/air pressure.png")
         pressure_icon.setPixmap(pressure_icon_pixmap)
         pressure_icon.setStyleSheet(f"color: {self.font_color}")
+        change_icon_color(pressure_icon, "assets/icons/air pressure.png", self.font_color)
         pressure_measure = QLabel(f"{pressure} hPa")
         pressure_label.setStyleSheet(f"font-size: 15px; color: {self.font_color};")
         pressure_measure.setStyleSheet(f"font-size: 30px; color: {self.font_color}")
@@ -441,6 +427,7 @@ class HomePage:
         cloudiness_icon_pixmap = QPixmap("assets/icons/cloud.png")
         cloudiness_icon.setPixmap(cloudiness_icon_pixmap)
         cloudiness_icon.setStyleSheet(f"color: {self.font_color}")
+        change_icon_color(cloudiness_icon, "assets/icons/cloud.png", self.font_color)
         cloudiness_measure = QLabel(f"{cloudiness}%")
         cloudiness_label.setStyleSheet(f"font-size: 15px; color: {self.font_color};")
         cloudiness_measure.setStyleSheet(f"font-size: 30px; color: {self.font_color}")
@@ -472,7 +459,7 @@ class HomePage:
         lower_section.setLayout(lower_layout)
 
         weather_layout.addWidget(top_section, alignment=Qt.AlignCenter)
-        weather_layout.addWidget(lower_section, alignment=Qt.AlignCenter | Qt.AlignTop)
+        weather_layout.addWidget(lower_section, alignment=Qt.AlignCenter)
 
         scroll_widget = QWidget()
         scroll_widget. setStyleSheet('''
@@ -735,4 +722,4 @@ class HomePage:
 
     def display_error(self, error_message):
         self.loading_overlay.hide()
-        self.result_label.setText(f"Error: {error_message}")
+        show_error_message(self.home_page, "An error occurred", error_message)
