@@ -4,7 +4,7 @@ from io import BytesIO
 from datetime import datetime
 from PyQt5.QtWidgets import QWidget, QMessageBox, QVBoxLayout, \
     QHBoxLayout, QLabel, QPushButton, QLineEdit, QStackedWidget, \
-    QFrame, QScrollArea
+    QFrame, QScrollArea, QComboBox
 from PyQt5.QtCore import Qt, QPoint, QSize
 from PyQt5.QtGui import QIcon, QFont, QPixmap
 from WeatherRequest import WeatherThread
@@ -16,6 +16,9 @@ from icon_color_changer import change_icon_color
 
 class HomePage:
     def __init__(self, stack_widget: QStackedWidget, loading_overlay):
+        self.wind_speed = None
+        self.temp_label = None
+        self.wind_speed_measure = None
         self.font_color = "#edeef1"
         self.country = None
         self.thread = None
@@ -194,11 +197,11 @@ class HomePage:
         self.scroll_area.setWidgetResizable(True)  # Allow scrollable content to resize
 
         temp_kelvin = data['main']['temp']
-        temp_celsius = temp_kelvin
-        feels_like_celsius = data['main']['feels_like']
+        self.temp_celsius = temp_kelvin
+        self.feels_like_celsius = data['main']['feels_like']
         description = data['weather'][0]['description']
         humidity = data['main']['humidity']
-        wind_speed = data['wind']['speed'] * 3.6
+        self.wind_speed = data['wind']['speed'] * 3.6
         pressure = data['main']['pressure']
         cloudiness = data['clouds']['all']
         icon_code = data['weather'][0].get('icon', '')
@@ -270,10 +273,10 @@ class HomePage:
         temp_layout = QVBoxLayout()
         temp_layout.setContentsMargins(0, 0, 0, 0)
 
-        temp_label = QLabel(f"{temp_celsius:.2f} °C")
-        temp_label.setFont(QFont("Arial", 45, QFont.Bold))
-        temp_label.setStyleSheet(f"color: {self.font_color}")
-        temp_layout.addWidget(temp_label, alignment=Qt.AlignLeft)
+        self.temp_label = QLabel(f"{self.temp_celsius:.2f} °C")
+        self.temp_label.setFont(QFont("Arial", 45, QFont.Bold))
+        self.temp_label.setStyleSheet(f"color: {self.font_color}")
+        temp_layout.addWidget(self.temp_label, alignment=Qt.AlignLeft)
 
         current_weather_label = QLabel("Current Weather")
         current_weather_label.setFont(QFont("Arial", 10, QFont.Bold))
@@ -292,13 +295,13 @@ class HomePage:
         feels_like_layout = QVBoxLayout()
         feels_like_widget.setContentsMargins(50, 0, 0, 0)
 
-        feels_like_label = QLabel(f"{feels_like_celsius:.2f} °C")
-        feels_like_label.setFont(QFont("Arial", 40))
-        feels_like_layout.addWidget(feels_like_label, alignment=Qt.AlignTop)
+        self.feels_like_label = QLabel(f"{self.feels_like_celsius:.2f} °C")
+        self.feels_like_label.setFont(QFont("Arial", 40))
+        feels_like_layout.addWidget(self.feels_like_label, alignment=Qt.AlignTop)
 
         feels_like_label_def = QLabel(f"Feels Like")
         feels_like_label_def.setFont(QFont("Arial", 12, QFont.Bold))
-        feels_like_label.setStyleSheet(f"color: {self.font_color}")
+        self.feels_like_label.setStyleSheet(f"color: {self.font_color}")
         feels_like_label_def.setStyleSheet(f"color: {self.font_color}")
         feels_like_layout.addWidget(feels_like_label_def, alignment=Qt.AlignTop)
 
@@ -385,13 +388,13 @@ class HomePage:
         wind_icon.setPixmap(wind_icon_pixmap)
         wind_icon.setStyleSheet(f"color: {self.font_color}")
         change_icon_color(wind_icon, "assets/icons/air.png", self.font_color)
-        wind_speed_measure = QLabel(f"{wind_speed: .2f} km/h")
+        self.wind_speed_measure = QLabel(f"{self.wind_speed: .2f} km/h")
         wind_speed_label.setStyleSheet(f"font-size: 15px; color: {self.font_color};")
-        wind_speed_measure.setStyleSheet(f"font-size: 30px; color: {self.font_color}")
+        self.wind_speed_measure.setStyleSheet(f"font-size: 30px; color: {self.font_color}")
 
         wind_speed_layout.addWidget(wind_speed_label, alignment=Qt.AlignTop | Qt.AlignCenter)
         wind_speed_layout.addWidget(wind_icon, alignment=Qt.AlignCenter)
-        wind_speed_layout.addWidget(wind_speed_measure, alignment=Qt.AlignCenter)
+        wind_speed_layout.addWidget(self.wind_speed_measure, alignment=Qt.AlignCenter)
         wind_speed_section.setLayout(wind_speed_layout)
         wind_speed_section.setLayout(wind_speed_layout)
 
@@ -527,94 +530,57 @@ class HomePage:
         exit_settings_btn.clicked.connect(lambda: self.home_stack_widget.setCurrentIndex(0))
         settings_layout.addWidget(exit_settings_btn, alignment=Qt.AlignLeft)
 
-        # Button to change the theme to Light Mode
-        light_mode_btn = QPushButton("Switch Theme")
-        light_mode_btn.setStyleSheet('''
-            QPushButton {
-                font-size: 16px;
-                padding: 10px;
-                background-color: #4CAF50; /* Green */
-                color: white;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: #45a049; /* Darker green on hover */
-            }
-        ''')
-        light_mode_btn.clicked.connect(self.switch_theme)  # Connect to light mode change function
-        settings_layout.addWidget(light_mode_btn, alignment=Qt.AlignCenter)
+        # Temperature unit chooser
+        temp_unit_label = QLabel("Choose Temperature Unit:")
+        temp_unit_chooser = QComboBox()
+        temp_unit_chooser.addItems(["Celsius", "Fahrenheit", "Kelvin"])
+        temp_unit_chooser.setCurrentIndex(0)  # Default selection
+        temp_unit_label.setStyleSheet("color: white;")
+        temp_unit_chooser.setStyleSheet("font-size: 15px; background-color: white;")
+        temp_unit_chooser.currentTextChanged.connect(self.on_temp_unit_changed)  # Connect to slot
+        settings_layout.addWidget(temp_unit_label)
+        settings_layout.addWidget(temp_unit_chooser)
 
+        # Wind speed unit chooser
+        wind_speed_unit_label = QLabel("Choose Wind Speed Unit:")
+        wind_speed_unit_chooser = QComboBox()
+        wind_speed_unit_chooser.addItems(["m/s", "km/h", "mph"])
+        wind_speed_unit_chooser.setCurrentIndex(0)  # Default selection
+        wind_speed_unit_label.setStyleSheet("color: white")
+        wind_speed_unit_chooser.setStyleSheet("font-size: 15px; background-color: white;")
+        wind_speed_unit_chooser.currentTextChanged.connect(self.on_wind_speed_unit_changed)  # Connect to slot
+        settings_layout.addWidget(wind_speed_unit_label)
+        settings_layout.addWidget(wind_speed_unit_chooser)
+
+        # Add spacers for better UI spacing
+        #settings_layout.addStretch()
+
+        # Set layout
         settings_page.setLayout(settings_layout)
         return settings_page
 
-    def switch_theme(self):
-        if self.current_theme_dark:
-            self.switch_to_light_mode()
+    def on_temp_unit_changed(self, value):
+        if value == "Celsius":
+            self.temp_label.setText(f"{self.temp_celsius: .2f} °C")
+            self.feels_like_label.setText(f"{self.feels_like_celsius: .2f} °C")
+        elif value == "Fahrenheit":
+            fahrenheit = (self.temp_celsius * 9/5) + 32
+            feels_like_fahrenheit = (self.feels_like_celsius * 9/5) + 32
+            self.temp_label.setText(f"{fahrenheit: .2f} °F")
+            self.feels_like_label.setText(f"{feels_like_fahrenheit: .2f} °F")
         else:
-            self.switch_to_dark_mode()
-        self.current_theme_dark = not self.current_theme_dark
+            kelvin = self.temp_celsius + 273.15
+            feels_like_kelvin = self.feels_like_celsius + 273.15
+            self.temp_label.setText(f"{kelvin: .2f} K")
+            self.feels_like_label.setText(f"{feels_like_kelvin: .2f} K")
 
-    def switch_to_dark_mode(self):
-        dark_mode_stylesheet = """
-                    QWidget {
-                        background-color: #131621; 
-                        color: white
-                    }
-                    QLineEdit {
-                        border: 1px solid gray;
-                        background-color: #131621;
-                        border: none;
-                    }
-                    QPushButton {
-                        background-color: #131621; 
-                        color: white
-                        border-radius: 20px;
-                    }
-                    QPushButton:hover {
-                        background-color: #0056b3;
-                    }
-                    QLabel {
-                        color: white
-                    }
-                """
-        self.search_input.setStyleSheet('''QLineEdit {
-            color: white;
-            border: none;
-            font-size: 15px;
-        }''')
-        self.result_label.setStyleSheet("color: white; font-size: 15px;")
-        self.home_page.setStyleSheet(dark_mode_stylesheet)
-
-    def switch_to_light_mode(self):
-        light_mode_stylesheet = """
-            QWidget {
-                background-color: #b5c5c8;
-                color: black;
-            }
-            QLineEdit {
-                border: 1px solid gray;
-                background-color: #f4f4f4;
-                padding: 5px;
-                border-radius: 20px;
-            }
-            QPushButton {
-                background-color: #007BFF;
-                color: #b5c5c8;
-            }
-            QPushButton:hover {
-                background-color: #0056b3;
-            }
-            QLabel {
-                color: black;
-            }
-        """
-        self.search_input.setStyleSheet('''QLineEdit {
-            color: black;
-            font-size: 15px;
-            border: none;
-        }''')
-        self.result_label.setStyleSheet("color: black; font-size: 15px;")
-        self.home_page.setStyleSheet(light_mode_stylesheet)
+    def on_wind_speed_unit_changed(self, value):
+        if value == "m/s":
+            pass
+        elif value == "km/h":
+            pass
+        else:
+            pass
 
     def display_widgets(self):
         menu_layout = QVBoxLayout()
