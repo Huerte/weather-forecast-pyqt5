@@ -279,12 +279,12 @@ class HomePage:
         temp_layout.addWidget(self.temp_label, alignment=Qt.AlignLeft)
 
         current_weather_label = QLabel("Current Weather")
-        current_weather_label.setFont(QFont("Arial", 10, QFont.Bold))
+        current_weather_label.setFont(QFont("Arial", 12, QFont.Bold))
         current_weather_label.setStyleSheet(f"color: {self.font_color}")
         temp_layout.addWidget(current_weather_label, alignment=Qt.AlignLeft)
 
         time_label = QLabel(current_time)
-        time_label.setFont(QFont("Arial", 10, QFont.Bold))
+        time_label.setFont(QFont("Arial", 12, QFont.Bold))
         time_label.setStyleSheet(f"color: {self.font_color}")
         temp_layout.addWidget(time_label, alignment=Qt.AlignLeft)
 
@@ -346,7 +346,8 @@ class HomePage:
         lower_section.setStyleSheet('''
             QWidget#low_widget {
             background-color: rgba(255, 255, 255, 0.4);
-            border-radius: 15px;            
+            border-radius: 15px;
+            padding: 5px 20px 5px 20px;        
             }
         ''')
         lower_section.setMinimumHeight(150)
@@ -355,7 +356,7 @@ class HomePage:
 
         humidity_section = QWidget()
         humidity_layout = QVBoxLayout()
-        humidity_layout.setContentsMargins(30, 0, 30, 0)
+        humidity_layout.setContentsMargins(20, 0, 20, 0)
 
         humidity_label = QLabel("Humidity")
         humidity_icon = QLabel()
@@ -377,7 +378,7 @@ class HomePage:
 
         wind_speed_section = QWidget()
         wind_speed_layout = QVBoxLayout()
-        wind_speed_layout.setContentsMargins(30, 0, 30, 0)
+        wind_speed_layout.setContentsMargins(20, 0, 20, 0)
 
         wind_speed_label = QLabel("Wind Speed")
         wind_icon = QLabel()
@@ -400,7 +401,7 @@ class HomePage:
 
         pressure_section = QWidget()
         pressure_layout = QVBoxLayout()
-        pressure_layout.setContentsMargins(30, 0, 30, 0)
+        pressure_layout.setContentsMargins(20, 0, 20, 0)
 
         pressure_label = QLabel("Pressure")
         pressure_icon = QLabel()
@@ -422,7 +423,7 @@ class HomePage:
 
         cloudiness_section = QWidget()
         cloudiness_layout = QVBoxLayout()
-        cloudiness_layout.setContentsMargins(30, 0, 30, 0)
+        cloudiness_layout.setContentsMargins(20, 0, 20, 0)
 
         cloudiness_label = QLabel("Cloudiness")
         cloudiness_icon = QLabel()
@@ -444,7 +445,7 @@ class HomePage:
 
         description_section = QWidget()
         description_layout = QVBoxLayout()
-        description_layout.setContentsMargins(30, 0, 30, 0)
+        description_layout.setContentsMargins(20, 0, 20, 0)
 
         description_def = QLabel("Description")
         null_widget = QLabel()
@@ -551,9 +552,6 @@ class HomePage:
         wind_speed_unit_chooser.currentTextChanged.connect(self.on_wind_speed_unit_changed)  # Connect to slot
         settings_layout.addWidget(wind_speed_unit_label)
         settings_layout.addWidget(wind_speed_unit_chooser)
-
-        # Add spacers for better UI spacing
-        #settings_layout.addStretch()
 
         # Set layout
         settings_page.setLayout(settings_layout)
