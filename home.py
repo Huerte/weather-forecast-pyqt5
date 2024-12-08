@@ -54,12 +54,12 @@ class HomePage:
         banner_layout.setSpacing(0)
 
         self.menu_btn = QPushButton()
-        self.menu_btn.setIcon(QIcon("assets/icons/menu1.png"))
+        self.menu_btn.setIcon(QIcon("assets/icons/menu.png"))
         self.menu_btn.setIconSize(QSize(70, 50))
         self.menu_btn.clicked.connect(lambda: self.open_menu())
         self.menu_btn.setStyleSheet(f"color: {self.font_color}; background-color: transparent;")
         self.menu_btn.setFocusPolicy(Qt.NoFocus)
-        change_icon_color(self.menu_btn, "assets/icons/menu1.png", self.font_color)
+        change_icon_color(self.menu_btn, "assets/icons/menu.png", self.font_color)
         self.menu_panel = QWidget(self.home_page)
         self.menu_panel.setWindowFlags(Qt.FramelessWindowHint | Qt.Popup)
         self.menu_panel.setGeometry(0, 0, self.MENU_PANEL_WIDTH, self.MENU_PANEL_WIDTH)
@@ -546,7 +546,7 @@ class HomePage:
         wind_speed_unit_label = QLabel("Choose Wind Speed Unit:")
         wind_speed_unit_chooser = QComboBox()
         wind_speed_unit_chooser.addItems(["m/s", "km/h", "mph"])
-        wind_speed_unit_chooser.setCurrentIndex(0)  # Default selection
+        wind_speed_unit_chooser.setCurrentIndex(1)  # Default selection
         wind_speed_unit_label.setStyleSheet("color: white")
         wind_speed_unit_chooser.setStyleSheet("font-size: 15px; background-color: white;")
         wind_speed_unit_chooser.currentTextChanged.connect(self.on_wind_speed_unit_changed)  # Connect to slot
@@ -574,11 +574,15 @@ class HomePage:
 
     def on_wind_speed_unit_changed(self, value):
         if value == "m/s":
-            pass
+            meter = self.wind_speed/3.6
+            self.wind_speed_measure.setText(f"{meter: .2f} m/s")
+
         elif value == "km/h":
-            pass
+            self.wind_speed_measure.setText(f"{self.wind_speed: .2f} km/h")
+
         else:
-            pass
+            km = self.wind_speed/1.609
+            self.wind_speed_measure.setText(f"{km: .2f} mph")
 
     def display_widgets(self):
         menu_layout = QVBoxLayout()
