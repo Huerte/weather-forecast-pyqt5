@@ -34,7 +34,7 @@ class Try:
             weather_category = "other"
             weather_details = f"Other conditions ({weather_description})"
 
-        # Map weather categories to background images
+        # Map weather categories to backgrounds images
         background_images = {
             "rainy": "assets/backgrounds/rainy.jpg",
             "sunny": "assets/backgrounds/sunny.jpg",
@@ -45,11 +45,11 @@ class Try:
             "other": "assets/backgrounds/default.jpg"
         }
 
-        # Get the background image for the current weather category
+        # Get the backgrounds image for the current weather category
         background_image = background_images.get(weather_category, "assets/backgrounds/default.jpg")
 
-        # Set the background dynamically using PyQt (assuming you are setting the background of the main window or widget)
-        self.setStyleSheet(f"QWidget {{ background-image: url({background_image}); }}")
+        # Set the backgrounds dynamically using PyQt (assuming you are setting the backgrounds of the main window or widget)
+        self.setStyleSheet(f"QWidget {{ backgrounds-image: url({background_image}); }}")
 
         # You can also use the weather_details variable to display more detailed information on your UI
         print(f"Weather is categorized as: {weather_category}")
@@ -115,15 +115,15 @@ from PyQt5.QtCore import Qt
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     main_window = QWidget()
-    main_window.setWindowTitle("Blurry Transparent Widget with Background Image Example")
+    main_window.setWindowTitle("Blurry Transparent Widget with backgrounds Image Example")
 
-    # Apply a background image using a stylesheet
+    # Apply a backgrounds image using a stylesheet
     main_window.setStyleSheet("""
         QWidget {
-            background-image: url('assets/bg.jpg');  /* Replace with your image path */
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: cover;
+            backgrounds-image: url('assets/bg.jpg');  /* Replace with your image path */
+            backgrounds-position: center;
+            backgrounds-repeat: no-repeat;
+            backgrounds-size: cover;
         }
     """)
 

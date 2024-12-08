@@ -27,13 +27,12 @@ class MainWindow:
         self.main_window = qtw.QMainWindow()
         self.main_window.setWindowTitle("Nimbus")
 
-        ######################################
         self.main_window.setWindowIcon(QIcon("assets/icons/logo.png"))
 
-        # Set background image and text color
+        # Set backgrounds image and text color
         self.main_window.setStyleSheet("""
           QMainWindow {
-              background-image: url('assets/bg.jpg'); 
+              background-image: url('assets/background/default.jpg'); 
               background-position: center;
               background-repeat: no-repeat;
               color: white;
@@ -47,7 +46,7 @@ class MainWindow:
         login = LoginWindow(self.stack_widget)
         self.login_page = login.display()
         self.register_page = RegisterWindow(self.stack_widget).display()
-        self.home_page = HomePage(self.stack_widget, login.loading).display()
+        self.home_page = HomePage(self.main_window, self.stack_widget, login.loading).display()
 
         # Amo ini an pagkasunod nan mga window, index zero an una mo
         # respawn na page pag run ng program

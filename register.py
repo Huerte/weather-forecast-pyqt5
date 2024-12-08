@@ -118,12 +118,16 @@ class RegisterWindow:
         return self.window
 
     def proceed_to_home_page(self):
-        if self.name_input.text().strip() == "" or self.password_input.text().strip() == "":
-            show_error_message(self.window, "Hayap kaw Loy?", "Empty input field detected!")
-        elif self.password_input.text() != self.password2_input.text():
-            show_error_message(self.window, "Tarunga lagi ayay laman!", "Password does not match!")
-        else:
-            self.register_account(self.name_input.text(), self.password_input.text())
+        if not self.name_input.text().strip():
+            show_error_message(self.window, "Empty Fields", "Username cannot be empty.")
+            return
+        if len(self.password_input.text()) < 8:
+            show_error_message(self.window, "Weak Password", "Password must be at least 8 characters.")
+            return
+        if self.password_input.text() != self.password2_input.text():
+            show_error_message(self.window, "Password Mismatch", "Passwords do not match!")
+            return
+        self.register_account(self.name_input.text().strip(), self.password_input.text().strip())
 
     def register_account(self, username, password):
         database_path = "auth/user_accounts.db"

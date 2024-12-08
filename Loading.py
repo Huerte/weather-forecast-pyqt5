@@ -11,14 +11,14 @@ class LoadingOverlay(QDialog):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setFixedSize(parent.size())
 
-        # Transparent background with centered layout
+        # Transparent backgrounds with centered layout
         main_layout = QVBoxLayout(self)
         main_layout.setAlignment(Qt.AlignCenter)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
         # Loading animation
         self.loading_label = QLabel()
-        self.loading_label.setAttribute(Qt.WA_TranslucentBackground)  # Make the label background transparent
+        self.loading_label.setAttribute(Qt.WA_TranslucentBackground)  # Make the label backgrounds transparent
         # Load the GIF animation
         movie = QMovie("assets/animation/loading.gif")
         movie.setScaledSize(QSize(75, 75))
@@ -27,7 +27,7 @@ class LoadingOverlay(QDialog):
         # Keep reference to the movie to prevent garbage collection
         self.movie = movie
         # Optionally, set the parent widget to be transparent too (if needed)
-        self.loading_label.setStyleSheet("background: transparent;")
+        self.loading_label.setStyleSheet("backgrounds: transparent;")
 
         # Add label to layout
         loading_wrapper = QWidget()

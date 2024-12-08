@@ -15,11 +15,21 @@ from icon_color_changer import change_icon_color
 
 
 class HomePage:
-    def __init__(self, stack_widget: QStackedWidget, loading_overlay):
+    def __init__(self, main_window, stack_widget: QStackedWidget, loading_overlay):
+        self.header_page = None
+        self.search_btn = None
+        self.main_window = main_window
+        self.lower_section = None
+        self.feels_like_label = QLabel()
+        self.top_section = None
+        self.feels_like_celsius = None
+        self.temp_celsius = None
         self.wind_speed = None
-        self.temp_label = None
-        self.wind_speed_measure = None
+        self.temp_label = QLabel()
+        self.wind_speed_measure = QLabel()
         self.font_color = "#edeef1"
+        self.current_metrics = "m/s"
+        self.current_temp_metrics = "Celsius"
         self.country = None
         self.thread = None
         self.loading_overlay = loading_overlay
@@ -91,19 +101,19 @@ class HomePage:
         top_layout.addWidget(banner, alignment=Qt.AlignLeft)
 
         # Header Page (Search Bar Section)
-        header_page = QWidget()
-        header_page.setContentsMargins(10, 0, 10, 0)
-        header_page.setStyleSheet(f"background-color: transparent; border: 2px solid {self.font_color}; border-radius: 25px;")
+        self.header_page = QWidget()
+        self.header_page.setContentsMargins(10, 0, 10, 0)
+        self.header_page.setStyleSheet(f"background-color: transparent; border: 2px solid {self.font_color}; border-radius: 25px;")
 
-        header_page.setFixedWidth(330)
+        self.header_page.setFixedWidth(330)
         header_layout = QHBoxLayout()
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setSpacing(5)
 
-        search_btn = QPushButton()
-        search_btn.setIconSize(QSize(30, 30))
-        search_btn.setFocusPolicy(Qt.NoFocus)
-        search_btn.setStyleSheet('''
+        self.search_btn = QPushButton()
+        self.search_btn.setIconSize(QSize(30, 30))
+        self.search_btn.setFocusPolicy(Qt.NoFocus)
+        self.search_btn.setStyleSheet('''
                     QPushButton {
                         font-size: 15px;
                         border: none;
@@ -113,11 +123,11 @@ class HomePage:
                         opacity: 0.8;
                     }
                 ''')
-        search_btn.setIcon(QIcon("assets/icons/search_icon.png"))
-        search_btn.setFixedSize(40, 30)
-        search_btn.clicked.connect(self.get_weather)
-        change_icon_color(search_btn, "assets/icons/search_icon.png", self.font_color)
-        header_layout.addWidget(search_btn)
+        self.search_btn.setIcon(QIcon("assets/icons/search_icon.png"))
+        self.search_btn.setFixedSize(40, 30)
+        self.search_btn.clicked.connect(self.get_weather)
+        change_icon_color(self.search_btn, "assets/icons/search_icon.png", self.font_color)
+        header_layout.addWidget(self.search_btn)
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Enter the city")
@@ -127,9 +137,9 @@ class HomePage:
         self.search_input.setFixedHeight(40)
         header_layout.addWidget(self.search_input)
 
-        header_page.setFixedHeight(50)
-        header_page.setLayout(header_layout)
-        top_layout.addWidget(header_page, alignment=Qt.AlignRight)
+        self.header_page.setFixedHeight(50)
+        self.header_page.setLayout(header_layout)
+        top_layout.addWidget(self.header_page, alignment=Qt.AlignRight)
 
         top_widget = QWidget()
         top_widget.setLayout(top_layout)
@@ -201,7 +211,7 @@ class HomePage:
         self.feels_like_celsius = data['main']['feels_like']
         description = data['weather'][0]['description']
         humidity = data['main']['humidity']
-        self.wind_speed = data['wind']['speed'] * 3.6
+        self.wind_speed = data['wind']['speed']
         pressure = data['main']['pressure']
         cloudiness = data['clouds']['all']
         icon_code = data['weather'][0].get('icon', '')
@@ -217,6 +227,8 @@ class HomePage:
 
         weather_layout = QVBoxLayout()
         weather_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.update_background(description)
 
         top_section = QWidget()
         top_section.setObjectName('top_widget')
@@ -273,7 +285,7 @@ class HomePage:
         temp_layout = QVBoxLayout()
         temp_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.temp_label = QLabel(f"{self.temp_celsius:.2f} °C")
+        self.on_temp_unit_changed(self.current_temp_metrics)
         self.temp_label.setFont(QFont("Arial", 45, QFont.Bold))
         self.temp_label.setStyleSheet(f"color: {self.font_color}")
         temp_layout.addWidget(self.temp_label, alignment=Qt.AlignLeft)
@@ -295,7 +307,7 @@ class HomePage:
         feels_like_layout = QVBoxLayout()
         feels_like_widget.setContentsMargins(50, 0, 0, 0)
 
-        self.feels_like_label = QLabel(f"{self.feels_like_celsius:.2f} °C")
+        self.on_temp_unit_changed(self.current_temp_metrics)
         self.feels_like_label.setFont(QFont("Arial", 40))
         feels_like_layout.addWidget(self.feels_like_label, alignment=Qt.AlignTop)
 
@@ -389,7 +401,7 @@ class HomePage:
         wind_icon.setPixmap(wind_icon_pixmap)
         wind_icon.setStyleSheet(f"color: {self.font_color}")
         change_icon_color(wind_icon, "assets/icons/air.png", self.font_color)
-        self.wind_speed_measure = QLabel(f"{self.wind_speed: .2f} km/h")
+        self.on_wind_speed_unit_changed(self.current_metrics)
         wind_speed_label.setStyleSheet(f"font-size: 15px; color: {self.font_color};")
         self.wind_speed_measure.setStyleSheet(f"font-size: 30px; color: {self.font_color}")
 
@@ -464,6 +476,11 @@ class HomePage:
         lower_layout.addWidget(description_section, alignment=Qt.AlignTop)
         lower_section.setLayout(lower_layout)
 
+        self.top_section = top_section
+        self.lower_section = lower_section
+
+        self.adjust_section_widths()
+
         weather_layout.addWidget(top_section, alignment=Qt.AlignCenter)
         weather_layout.addWidget(lower_section, alignment=Qt.AlignCenter)
 
@@ -497,9 +514,67 @@ class HomePage:
         self.main_layout.addWidget(self.scroll_area)
         self.loading_overlay.hide()
 
+    def update_background(self, description):
+        if "clear" in description:
+            background_image = "assets/backgrounds/sunny.png"
+        elif "clouds" in description:
+            background_image = "assets/backgrounds/cloudy.png"
+        elif "rain" in description or "drizzle" in description:
+            background_image = "assets/backgrounds/rainy.jpg"
+        elif "thunderstorm" in description:
+            background_image = "assets/backgrounds/thunderstorm.jpg"
+            self.font_color = "#000000"
+        elif "snow" in description:
+            background_image = "assets/backgrounds/snowy.png"
+        elif "mist" in description or "fog" in description or "haze" in description:
+            background_image = "assets/backgrounds/foggy.png"
+        elif "tornado" in description:
+            background_image = "assets/backgrounds/tornado.jpg"
+            self.font_color = "#000000"
+        elif "hurricane" in description:
+            background_image = "assets/backgrounds/hurricane.jpg"
+        elif "cold" in description:
+            background_image = "assets/backgrounds/cold.jpg"
+        elif "hot" in description:
+            background_image = "assets/backgrounds/hot.jpg"
+        elif "windy" in description:
+            background_image = "assets/backgrounds/windy.jpg"
+        elif "hail" in description:
+            background_image = "assets/backgrounds/hail.jpg"
+        else:
+            background_image = "assets/backgrounds/default.png"
+
+        self.main_window.setStyleSheet(f"""
+            QMainWindow {{
+                background-image: url({background_image});
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: cover;
+            }}
+        """)
+
+        self.update_top_section()
+    
+    def update_top_section(self):
+        change_icon_color(self.menu_btn, "assets/icons/menu.png", self.font_color)
+        change_icon_color(self.search_btn, "assets/icons/search_icon.png", self.font_color)
+        self.header_page.setStyleSheet(f"background-color: transparent; border: 2px solid {self.font_color}; border-radius: 25px;")
+        self.search_input.setStyleSheet(f"font-size: 15px; padding: 0px 5px; border: none; color: {self.font_color}")
+
+    def adjust_section_widths(self):
+        # Get the current widths of the top and lower sections
+        top_width = self.top_section.sizeHint().width()
+        lower_width = self.lower_section.sizeHint().width()
+
+        # Determine the maximum width needed
+        max_width = max(top_width, lower_width)
+
+        # Set the maximum width for both sections
+        self.top_section.setMinimumWidth(max_width)
+        self.lower_section.setMinimumWidth(max_width)
+
     @staticmethod
     def set_transparent_background(widget):
-        """ Recursively sets the background of all child widgets to transparent. """
         widget.setStyleSheet("background: transparent; border: none;")
 
     @staticmethod
@@ -558,6 +633,7 @@ class HomePage:
         return settings_page
 
     def on_temp_unit_changed(self, value):
+        self.current_temp_metrics = value
         if value == "Celsius":
             self.temp_label.setText(f"{self.temp_celsius: .2f} °C")
             self.feels_like_label.setText(f"{self.feels_like_celsius: .2f} °C")
@@ -573,13 +649,12 @@ class HomePage:
             self.feels_like_label.setText(f"{feels_like_kelvin: .2f} K")
 
     def on_wind_speed_unit_changed(self, value):
+        self.current_metrics = value
         if value == "m/s":
-            meter = self.wind_speed/3.6
-            self.wind_speed_measure.setText(f"{meter: .2f} m/s")
-
+            self.wind_speed_measure.setText(f"{self.wind_speed: .2f} m/s")
         elif value == "km/h":
-            self.wind_speed_measure.setText(f"{self.wind_speed: .2f} km/h")
-
+            kilometer = self.wind_speed * 3.6
+            self.wind_speed_measure.setText(f"{kilometer: .2f} km/h")
         else:
             km = self.wind_speed/1.609
             self.wind_speed_measure.setText(f"{km: .2f} mph")
