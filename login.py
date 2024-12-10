@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, QSize
 import sqlite3 as sql
 import bcrypt
 from message_display import show_error_message
-from home import LoadingOverlay
+from Loading import LoadingOverlay
 from icon_color_changer import change_icon_color
 
 

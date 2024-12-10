@@ -11,7 +11,7 @@ class GeocodingThread(QThread):
 
     def run(self):
         try:
-            API_KEY = "8b10c16a96250f6c3cba0ad441fe8e91"  # Replace with your OpenCage API key
+            API_KEY = "30ba22e2e6167e9348723acd54502cf0"  # Replace with your OpenCage API key
             Base_Url = "http://api.positionstack.com/v1/forward"
 
             # Construct the URL using the city name

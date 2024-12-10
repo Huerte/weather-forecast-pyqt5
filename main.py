@@ -4,9 +4,7 @@
 import sqlite3 as sql
 import PyQt5.QtWidgets as qtw
 import sys
-
 from PyQt5.QtGui import QIcon
-
 from login import LoginWindow
 from register import RegisterWindow
 from home import HomePage
@@ -39,8 +37,10 @@ class MainWindow:
           }
         """)
 
-        WIDTH, HEIGHT = 1050, 600
-        self.main_window.setGeometry(0, 0, WIDTH, HEIGHT)
+        WIDTH, HEIGHT = 1080, 600
+        self.main_window.resize(WIDTH, HEIGHT)
+
+        self.main_window.setMinimumSize(1080, 600)
 
         self.stack_widget = qtw.QStackedWidget()
         login = LoginWindow(self.stack_widget)
