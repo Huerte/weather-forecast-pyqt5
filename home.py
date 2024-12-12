@@ -1,3 +1,5 @@
+import sys
+
 import pycountry
 import requests
 from io import BytesIO
@@ -17,6 +19,17 @@ from icon_color_changer import change_icon_color
 
 class HomePage:
     def __init__(self, main_window, stack_widget: QStackedWidget, loading_overlay):
+        self.cloudiness_label = None
+        self.cloudiness_icon = None
+        self.cloudiness_measure = None
+        self.description_def = None
+        self.null_widget = None
+        self.description_label = None
+        self.icon_label = None
+        self.time_label = None
+        self.current_weather_label = None
+        self.week_day_label = None
+        self.location_icon = None
         self.label_list = None
         self.date_label = None
         self.weather_sect_bg = QColor(255, 255, 255, int(0.4 * 255))
@@ -107,7 +120,7 @@ class HomePage:
         # Header Page (Search Bar Section)
         self.header_page = QWidget()
         self.header_page.setContentsMargins(10, 0, 10, 0)
-        self.header_page.setStyleSheet(f"background-color: transparent; border: 2px solid {self.font_color}; border-radius: 25px;")
+        self.header_page.setStyleSheet(f"background-color: rgba(0, 0, 0, 0.6); border: 2px solid {self.font_color}; border-radius: 25px;")
 
         self.header_page.setFixedWidth(330)
         header_layout = QHBoxLayout()
@@ -151,7 +164,10 @@ class HomePage:
 
         self.main_layout.addWidget(top_widget, alignment=Qt.AlignTop)
 
-        self.get_current_location()
+        if not self.get_current_location():
+            self.loading_overlay.hide()
+            sys.exit() #dili mo display an main window!!!
+
         self.home_page.setLayout(self.main_layout)
 
         self.loading_overlay.hide()
@@ -162,6 +178,7 @@ class HomePage:
             background_image = "assets/backgrounds/sunny.jpg"
         elif "clouds" in description:
             background_image = "assets/backgrounds/cloudy.jpg"
+            self.search_input.setStyleSheet("color: black;")
         elif "rain" in description or "drizzle" in description:
             background_image = "assets/backgrounds/rainy.jpg"
         elif "thunderstorm" in description:
@@ -205,12 +222,16 @@ class HomePage:
         self.search_input.setStyleSheet(f"font-size: 15px; padding: 0px 5px; border: none; color: {self.font_color}")
 
     def get_current_location(self):
-        data = self.get_location()
-        city = data['city']
-        coordinates = data['loc'].split(',')
-        self.fetch_weather_data(coordinates[0], coordinates[1])
-        self.city_name = city
-        self.country = data['country']
+        try:
+            data = self.get_location()
+            city = data['city']
+            coordinates = data['loc'].split(',')
+            self.fetch_weather_data(coordinates[0], coordinates[1])
+            self.city_name = city
+            self.country = data['country']
+            return True
+        except Exception as e:
+            return False
 
     def get_weather(self):
         city = self.search_input.text().title()
@@ -398,8 +419,8 @@ class HomePage:
 
         top_right_section.setLayout(top_right_layout)
 
-        top_layout.addWidget(top_left_section)
-        top_layout.addWidget(top_right_section)
+        top_layout.addWidget(top_left_section, alignment=Qt.AlignLeft)
+        top_layout.addWidget(top_right_section, alignment=Qt.AlignLeft)
         self.top_section.setLayout(top_layout)
 
         self.lower_section = QWidget()
@@ -578,20 +599,33 @@ class HomePage:
     def set_transparent_background(widget):
         widget.setStyleSheet("background: transparent; border: none;")
 
-    @staticmethod
-    def get_location():
-        response = requests.get("https://ipinfo.io/json")
-        data = response.json()
+    def get_location(self):
+        try:
+            # Make a request to ipinfo.io API
+            response = requests.get("https://ipinfo.io/json", timeout=5)
+            # Check if the response is successful
+            if response.status_code != 200:
+                raise Exception("Failed to fetch location data")
 
-        country_code = data["country"]
-        country_name = pycountry.countries.get(alpha_2=country_code).name if country_code else None
+            data = response.json()
+            # Extract and process the country name
+            country_code = data.get("country")
+            country_name = (
+                pycountry.countries.get(alpha_2=country_code).name if country_code else "Unknown"
+            )
 
-        return {
-            "city": data["city"],
-            "loc": data["loc"],
-            "country": country_name
-
-        }
+            return {
+                "city": data.get("city", "Unknown"),
+                "loc": data.get("loc", "Unknown"),
+                "country": country_name,
+            }
+        except requests.exceptions.RequestException as e:
+            # Handle network-related errors
+            show_error_message(self.main_window, "No Internet Connection!",
+                        "Please connect your device to the internet.")
+        except Exception as e:
+            # Handle other unexpected errors
+            show_error_message(self.main_window, "Error!", f"An error occurred: {str(e)}")
 
     def display_settings(self):
         settings_page = QWidget()
@@ -737,8 +771,6 @@ class HomePage:
         # Remove the scroll area if it exists
         if hasattr(self, 'scroll_area') and self.scroll_area:
             self.main_layout.removeWidget(self.scroll_area)
-            self.scroll_area.deleteLater()
-            self.scroll_area = None
 
     def open_menu(self):
         if self.menu_panel.isHidden():
@@ -763,3 +795,4 @@ class HomePage:
     def display_error(self, error_message):
         self.loading_overlay.hide()
         show_error_message(self.home_page, "An error occurred", error_message)
+

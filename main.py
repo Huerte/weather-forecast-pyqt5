@@ -8,6 +8,7 @@ from PyQt5.QtGui import QIcon
 from login import LoginWindow
 from register import RegisterWindow
 from home import HomePage
+from message_display import show_ask_message
 
 
 class MainWindow:
@@ -44,9 +45,9 @@ class MainWindow:
 
         self.stack_widget = qtw.QStackedWidget()
         login = LoginWindow(self.stack_widget)
+        self.home_page = HomePage(self.main_window, self.stack_widget, login.loading).display()
         self.login_page = login.display()
         self.register_page = RegisterWindow(self.stack_widget).display()
-        self.home_page = HomePage(self.main_window, self.stack_widget, login.loading).display()
 
         # Amo ini an pagkasunod nan mga window, index zero an una mo
         # respawn na page pag run ng program
@@ -55,7 +56,7 @@ class MainWindow:
         self.stack_widget.addWidget(self.home_page)  # index 2
 
         self.main_window.setCentralWidget(self.stack_widget)
-
+        self.main_window.closeEvent = self.confirm_exit
         self.center_window()
         self.main_window.show()
 
@@ -94,6 +95,14 @@ class MainWindow:
         finally:
             cursor.close()
             conn.close()
+
+    def confirm_exit(self, event):
+        """Show confirmation dialog when the application is about to quit."""
+        reply = show_ask_message(self.main_window, "Confirm Exit", "Are you sure you want to exit?")
+        if reply:
+            sys.exit()
+        else:
+            event.ignore()
 
 
 def main():
