@@ -1,4 +1,6 @@
-Weather Forecast Desktop App (PyQt5)
+# Weather Forecast Desktop App (PyQt5)
+
+![App Layout Preview](src/assets/nimbus_app.png)
 
 A clean, modern desktop weather application built with PyQt5.
 This project fetches current weather data and 5-day forecasts using OpenWeatherMap's API.
@@ -78,5 +80,5 @@ See the LICENSE file for details.
 👨‍💻 AUTHOR
 ---------------------------------------------------------
 GitHub: 
-https://github.com/Huerte
-https://github.com/Ts4rd
+- https://github.com/Huerte
+- https://github.com/Ts4rd
